@@ -26,8 +26,8 @@ jobs:
 
       - name: Install dependencies
         run: |
-          cd scripts
-          npm install
+          sudo apt-get update
+          sudo apt-get install -y libasound2t64 || sudo apt-get install -y liboss4-salsa-asound2
 
       - name: Install Chrome dependencies
         run: |
