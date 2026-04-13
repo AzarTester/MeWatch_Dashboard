@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>mewatch Performance Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root {
+    --c-bg: #f8f9fb;
+    --c-surface: #ffffff;
+    --c-border: #e2e6ed;
+    --c-text: #1a1d23;
+    --c-muted: #6b7280;
+    --c-accent: #6366f1;
+    --c-accent-light: #eef2ff;
+    --c-good: #16a34a;
+    --c-good-bg: #dcfce7;
+    --c-warn: #d97706;
+    --c-warn-bg: #fef3c7;
+    --c-bad: #dc2626;
+    --c-bad-bg: #fee2e2;
+    --c-score-high: #16a34a;
+    --c-score-mid: #d97706;
+    --c-score-low: #dc2626;
+    --sidebar-w: 220px;
+    --header-h: 56px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--c-bg); color: var(--c-text); font-size: 14px; line-height: 1.5; }
+
+  /* Layout */
+  #app { display: flex; min-height: 100vh; }
+  .sidebar {
+    width: var(--sidebar-w);
+    background: var(--c-surface);
+    border-right: 1px solid var(--c-border);
+    display: flex; flex-direction: column;
+    position: fixed; top: 0; left: 0; bottom: 0; z-index: 10;
+  }
+  .sidebar-brand {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--c-border);
+    display: flex; align-items: center; gap: 10px;
+  }
+  .brand-icon {
+    width: 32px; height: 32px; border-radius: 8px;
+    background: var(--c-accent); display: flex; align-items: center; justify-content: center;
+  }
+  .brand-icon svg { width: 18px; height: 18px; fill: #fff; }
+  .brand-text { font-weight: 600; font-size: 13px; line-height: 1.2; }
+  .brand-sub { font-size: 11px; color: var(--c-muted); }
+  .nav { padding: 8px 0; flex: 1; overflow-y: auto; }
+  .nav-section { padding: 16px 16px 4px; font-size: 10px; font-weight: 600; letter-spacing: .08em; color: var(--c-muted); text-transform: uppercase; }
+  .nav-item {
+    display: flex; align-items: center; gap: 8px;
+    padding: 7px 16px; cursor: pointer; font-size: 13px;
+    color: var(--c-muted); transition: all .12s; border-radius: 0;
+  }
+  .nav-item:hover { background: var(--c-bg); color: var(--c-text); }
+  .nav-item.active { background: var(--c-accent-light); color: var(--c-accent); font-weight: 500; }
+  .nav-item svg { width: 15px; height: 15px; flex-shrink: 0; }
+  .main { margin-left: var(--sidebar-w); flex: 1; display: flex; flex-direction: column; }
+  .topbar {
+    height: var(--header-h); background: var(--c-surface);
+    border-bottom: 1px solid var(--c-border);
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 24px; position: sticky; top: 0; z-index: 9;
+  }
+  .topbar-left { display: flex; align-items: center; gap: 12px; }
+  .page-title { font-weight: 600; font-size: 15px; }
+  .topbar-right { display: flex; align-items: center; gap: 10px; }
+  .content { padding: 24px; }
+
+  /* Filters bar */
+  .filters-bar {
+    background: var(--c-surface); border: 1px solid var(--c-border); border-radius: 10px;
+    padding: 14px 18px; margin-bottom: 20px;
+    display: flex; align-items: center; flex-wrap: wrap; gap: 12px;
+  }
+  .filter-group { display: flex; align-items: center; gap: 6px; }
+  .filter-label { font-size: 12px; color: var(--c-muted); font-weight: 500; }
+  .filter-input {
+    border: 1px solid var(--c-border); border-radius: 6px;
+    padding: 5px 9px; font-size: 13px; background: var(--c-bg); color: var(--c-text);
+    outline: none; transition: border .15s;
+  }
+  .filter-input:focus { border-color: var(--c-accent); }
+  .device-toggle { display: flex; border: 1px solid var(--c-border); border-radius: 6px; overflow: hidden; }
+  .device-btn {
+    padding: 5px 12px; font-size: 12px; cursor: pointer; background: none; border: none;
+    color: var(--c-muted); transition: all .12s; font-weight: 500;
+  }
+  .device-btn.active { background: var(--c-accent); color: #fff; }
+  .btn { padding: 6px 14px; border-radius: 6px; font-size: 13px; cursor: pointer; transition: all .12s; font-weight: 500; border: 1px solid var(--c-border); background: var(--c-bg); color: var(--c-text); }
+  .btn:hover { background: var(--c-border); }
+  .btn-primary { background: var(--c-accent); color: #fff; border-color: var(--c-accent); }
+  .btn-primary:hover { background: #4f46e5; }
+  .ml-auto { margin-left: auto; }
+
+  /* Score cards */
+  .score-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 20px; }
+  .score-card {
+    background: var(--c-surface); border: 1px solid var(--c-border); border-radius: 10px;
+    padding: 16px; display: flex; flex-direction: column; gap: 8px;
+  }
+  .score-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--c-muted); }
+  .score-value-row { display: flex; align-items: flex-end; gap: 8px; }
+  .score-num { font-size: 36px; font-weight: 700; line-height: 1; }
+  .score-num.high { color: var(--c-score-high); }
+  .score-num.mid { color: var(--c-score-mid); }
+  .score-num.low { color: var(--c-score-low); }
+  .score-badge {
+    margin-bottom: 4px; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 4px;
+  }
+  .score-badge.good { background: var(--c-good-bg); color: var(--c-good); }
+  .score-badge.needs-improvement { background: var(--c-warn-bg); color: var(--c-warn); }
+  .score-badge.poor { background: var(--c-bad-bg); color: var(--c-bad); }
+  .score-gauge { height: 4px; background: var(--c-border); border-radius: 2px; overflow: hidden; }
+  .score-gauge-fill { height: 100%; border-radius: 2px; transition: width .4s; }
+
+  /* Section layout */
+  .section { margin-bottom: 24px; }
+  .section-title { font-size: 14px; font-weight: 600; margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
+  .section-title svg { width: 15px; height: 15px; color: var(--c-accent); }
+  .card { background: var(--c-surface); border: 1px solid var(--c-border); border-radius: 10px; padding: 18px; }
+  .card-title { font-size: 13px; font-weight: 600; margin-bottom: 14px; color: var(--c-text); }
+  .card-sub { font-size: 11px; color: var(--c-muted); margin-top: 4px; font-weight: normal; }
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .chart-wrap { position: relative; height: 200px; }
+
+  /* Vitals table */
+  .vitals-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .vital-card {
+    background: var(--c-bg); border: 1px solid var(--c-border); border-radius: 8px; padding: 12px;
+  }
+  .vital-name { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--c-muted); }
+  .vital-value { font-size: 22px; font-weight: 700; margin: 4px 0 2px; }
+  .vital-unit { font-size: 12px; font-weight: 400; color: var(--c-muted); }
+  .vital-badge { display: inline-block; font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 4px; }
+
+  /* Tables */
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  th { text-align: left; font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: var(--c-muted); padding: 8px 10px; border-bottom: 1px solid var(--c-border); }
+  td { padding: 8px 10px; border-bottom: 1px solid var(--c-bg); vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--c-bg); }
+  .pill {
+    display: inline-block; padding: 2px 7px; border-radius: 4px; font-size: 11px; font-weight: 600;
+  }
+  .pill.good { background: var(--c-good-bg); color: var(--c-good); }
+  .pill.needs-improvement { background: var(--c-warn-bg); color: var(--c-warn); }
+  .pill.poor { background: var(--c-bad-bg); color: var(--c-bad); }
+  .pill.desktop { background: #ede9fe; color: #6d28d9; }
+  .pill.mobile { background: #fce7f3; color: #be185d; }
+
+  /* Diagnostics */
+  .diag-row { display: flex; align-items: center; justify-content: space-between; padding: 9px 0; border-bottom: 1px solid var(--c-border); }
+  .diag-row:last-child { border-bottom: none; }
+  .diag-name { font-size: 13px; }
+  .diag-right { display: flex; align-items: center; gap: 10px; }
+  .diag-val { font-weight: 600; font-size: 13px; }
+  .diag-bench { font-size: 11px; color: var(--c-muted); }
+
+  /* Empty state */
+  .empty { text-align: center; padding: 48px 24px; color: var(--c-muted); }
+  .empty h3 { font-size: 16px; margin-bottom: 8px; color: var(--c-text); }
+  .empty p { font-size: 13px; line-height: 1.6; }
+  .empty code { background: var(--c-bg); padding: 2px 6px; border-radius: 4px; font-family: monospace; font-size: 12px; }
+
+  /* Tab pages */
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* Responsive */
+  @media (max-width: 900px) {
+    .score-grid { grid-template-columns: repeat(2, 1fr); }
+    .two-col { grid-template-columns: 1fr; }
+    .vitals-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 600px) {
+    :root { --sidebar-w: 0px; }
+    .sidebar { display: none; }
+    .score-grid { grid-template-columns: repeat(2, 1fr); }
+    .vitals-grid { grid-template-columns: 1fr 1fr; }
+  }
+
+  /* PDF button */
+  @media print {
+    .sidebar, .topbar, .filters-bar .btn, .device-toggle, #pdf-btn { display: none !important; }
+    .main { margin-left: 0; }
+    body { background: #fff; }
+    .card { break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- Sidebar -->
+<nav class="sidebar">
+  <div class="sidebar-brand">
+    <div class="brand-icon">
+      <svg viewBox="0 0 24 24"><path d="M3 5h18v14H3V5zm2 2v10h14V7H5zm2 2h2v2H7V9zm4 0h2v2h-2V9zm4 0h2v2h-2V9zM7 13h10v2H7v-2z"/></svg>
+    </div>
+    <div>
+      <div class="brand-text">Perf Dashboard</div>
+      <div class="brand-sub">mewatch.sg</div>
+    </div>
+  </div>
+  <div class="nav">
+    <div class="nav-section">Overview</div>
+    <div class="nav-item active" data-page="summary">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+      Summary
+    </div>
+    <div class="nav-item" data-page="vitals">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      Core Web Vitals
+    </div>
+    <div class="nav-section">Trends</div>
+    <div class="nav-item" data-page="score-trends">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+      Score Trends
+    </div>
+    <div class="nav-item" data-page="vitals-trends">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      Vitals Trends
+    </div>
+    <div class="nav-section">Details</div>
+    <div class="nav-item" data-page="resources">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+      Resources
+    </div>
+    <div class="nav-item" data-page="history">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      Run History
+    </div>
+  </div>
+</nav>
+
+<!-- Main -->
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-left">
+      <span class="page-title" id="page-title">Summary</span>
+    </div>
+    <div class="topbar-right">
+      <button class="btn" id="pdf-btn" onclick="window.print()">⬇ Save as PDF</button>
+    </div>
+  </div>
+
+  <div class="content">
+    <!-- Filters -->
+    <div class="filters-bar">
+      <div class="filter-group">
+        <span class="filter-label">From</span>
+        <input type="date" class="filter-input" id="date-from" />
+      </div>
+      <div class="filter-group">
+        <span class="filter-label">To</span>
+        <input type="date" class="filter-input" id="date-to" />
+      </div>
+      <div class="device-toggle">
+        <button class="device-btn active" data-device="desktop">Desktop</button>
+        <button class="device-btn" data-device="mobile">Mobile</button>
+      </div>
+      <div class="ml-auto" style="display:flex;gap:8px;">
+        <button class="btn" id="reset-btn">Reset</button>
+        <button class="btn btn-primary" id="apply-btn">Apply</button>
+      </div>
+    </div>
+
+    <!-- PAGE: Summary -->
+    <div class="page active" id="page-summary">
+      <div class="score-grid" id="score-cards"></div>
+      <div class="section">
+        <div class="section-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          Core Web Vitals — Latest run
+        </div>
+        <div class="card">
+          <div class="vitals-grid" id="vitals-cards"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAGE: Core Web Vitals -->
+    <div class="page" id="page-vitals">
+      <div class="section">
+        <div class="card">
+          <div class="card-title">Core Web Vitals — Latest run</div>
+          <div class="vitals-grid" id="vitals-cards-2"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAGE: Score Trends -->
+    <div class="page" id="page-score-trends">
+      <div class="section">
+        <div class="card">
+          <div class="card-title">Lighthouse Category Scores
+            <span class="card-sub">Performance · Accessibility · Best Practices · SEO</span>
+          </div>
+          <div class="chart-wrap"><canvas id="chart-scores"></canvas></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAGE: Vitals Trends -->
+    <div class="page" id="page-vitals-trends">
+      <div class="two-col">
+        <div class="card">
+          <div class="card-title">LCP — Largest Contentful Paint
+            <span class="card-sub">Good ≤2.5s · Needs Improvement ≤4.0s · Poor >4.0s</span>
+          </div>
+          <div class="chart-wrap"><canvas id="chart-lcp"></canvas></div>
+        </div>
+        <div class="card">
+          <div class="card-title">FCP — First Contentful Paint
+            <span class="card-sub">Good ≤1.8s · Needs Improvement ≤3.0s · Poor >3.0s</span>
+          </div>
+          <div class="chart-wrap"><canvas id="chart-fcp"></canvas></div>
+        </div>
+        <div class="card">
+          <div class="card-title">TBT — Total Blocking Time
+            <span class="card-sub">Good ≤200ms · Needs Improvement ≤600ms · Poor >600ms</span>
+          </div>
+          <div class="chart-wrap"><canvas id="chart-tbt"></canvas></div>
+        </div>
+        <div class="card">
+          <div class="card-title">CLS — Cumulative Layout Shift
+            <span class="card-sub">Good ≤0.1 · Needs Improvement ≤0.25 · Poor >0.25</span>
+          </div>
+          <div class="chart-wrap"><canvas id="chart-cls"></canvas></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAGE: Resources -->
+    <div class="page" id="page-resources">
+      <div class="two-col">
+        <div class="card">
+          <div class="card-title">Page Weight Breakdown
+            <span class="card-sub">Transfer size composition (KB)</span>
+          </div>
+          <div class="chart-wrap"><canvas id="chart-weight"></canvas></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Opportunities (KB savings)
+            <span class="card-sub">Unused JS · Unused CSS · Unoptimized images</span>
+          </div>
+          <div class="chart-wrap"><canvas id="chart-opportunities"></canvas></div>
+        </div>
+      </div>
+      <div class="section">
+        <div class="card">
+          <div class="card-title">Diagnostic Metrics</div>
+          <div id="diag-table"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAGE: History -->
+    <div class="page" id="page-history">
+      <div class="card">
+        <div class="card-title">All Runs</div>
+        <div class="table-wrap">
+          <table id="history-table">
+            <thead>
+              <tr>
+                <th>Date</th><th>Device</th>
+                <th>Perf</th><th>A11y</th><th>BP</th><th>SEO</th>
+                <th>FCP</th><th>LCP</th><th>TBT</th><th>CLS</th><th>TTI</th><th>Transfer</th>
+              </tr>
+            </thead>
+            <tbody id="history-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+</div><!-- /app -->
+
+<script>
+(function () {
+  'use strict';
+
+  // ── State ────────────────────────────────────────────────────────────────
+  let allData = [];
+  let filteredData = [];
+  let activeDevice = 'desktop';
+  let charts = {};
+
+  // ── Helpers ───────────────────────────────────────────────────────────────
+  const $ = (sel) => document.querySelector(sel);
+  const fmtDate = (iso) => {
+    const d = new Date(iso);
+    return d.toLocaleDateString('en-SG', { day: '2-digit', month: 'short', year: 'numeric' });
+  };
+  const fmtMs = (v) => v == null ? '—' : v >= 1000 ? (v / 1000).toFixed(2) + 's' : Math.round(v) + 'ms';
+  const fmtKb = (v) => v == null ? '—' : v + ' KB';
+  const scoreCls = (s) => s >= 90 ? 'high' : s >= 50 ? 'mid' : 'low';
+  const pillCls = (s) => s >= 90 ? 'good' : s >= 50 ? 'needs-improvement' : 'poor';
+  const pillLbl = (s) => s >= 90 ? 'Good' : s >= 50 ? 'Average' : 'Poor';
+
+  function vitalStatus(metric, value) {
+    if (value == null) return { cls: '', label: '—' };
+    const thresholds = {
+      lcp: [2500, 4000], fcp: [1800, 3000], tbt: [200, 600],
+      cls: [0.1, 0.25], tti: [3800, 7300], si: [3400, 5800],
+    };
+    const t = thresholds[metric];
+    if (!t) return { cls: '', label: '' };
+    if (value <= t[0]) return { cls: 'good', label: 'Good' };
+    if (value <= t[1]) return { cls: 'needs-improvement', label: 'Needs Improvement' };
+    return { cls: 'poor', label: 'Poor' };
+  }
+
+  // ── Data loading ──────────────────────────────────────────────────────────
+  async function loadData() {
+    try {
+      const res = await fetch('results/perf-results.json?t=' + Date.now());
+      allData = await res.json();
+    } catch (_) {
+      allData = [];
+    }
+    initDatePickers();
+    applyFilters();
+  }
+
+  function initDatePickers() {
+    if (!allData.length) return;
+    const dates = allData.map((r) => r.timestamp.slice(0, 10)).sort();
+    $('#date-from').value = dates[0];
+    $('#date-to').value = dates[dates.length - 1];
+  }
+
+  function applyFilters() {
+    const from = $('#date-from').value;
+    const to = $('#date-to').value;
+    filteredData = allData.filter((r) => {
+      const d = r.timestamp.slice(0, 10);
+      const deviceMatch = r.device === activeDevice;
+      const dateMatch = (!from || d >= from) && (!to || d <= to);
+      return deviceMatch && dateMatch;
+    });
+    render();
+  }
+
+  // ── Rendering ─────────────────────────────────────────────────────────────
+  function render() {
+    renderScoreCards();
+    renderVitalsCards('#vitals-cards');
+    renderVitalsCards('#vitals-cards-2');
+    renderScoreTrends();
+    renderVitalsTrends();
+    renderResources();
+    renderHistory();
+  }
+
+  function renderScoreCards() {
+    const el = $('#score-cards');
+    if (!filteredData.length) {
+      el.innerHTML = '<div class="empty" style="grid-column:1/-1"><h3>No data yet</h3><p>Run your first Lighthouse test via GitHub Actions or locally.</p></div>';
+      return;
+    }
+    const latest = filteredData[filteredData.length - 1];
+    const s = latest.scores;
+    const metrics = [
+      { key: 'performance', label: 'Performance' },
+      { key: 'accessibility', label: 'Accessibility' },
+      { key: 'bestPractices', label: 'Best Practices' },
+      { key: 'seo', label: 'SEO' },
+    ];
+    el.innerHTML = metrics.map(({ key, label }) => {
+      const val = s[key] ?? 0;
+      const cls = scoreCls(val);
+      const pcls = pillCls(val);
+      const plbl = pillLbl(val);
+      const color = cls === 'high' ? '#16a34a' : cls === 'mid' ? '#d97706' : '#dc2626';
+      return `<div class="score-card">
+        <div class="score-label">${label}</div>
+        <div class="score-value-row">
+          <div class="score-num ${cls}">${val}</div>
+          <div class="score-badge ${pcls}">${plbl}</div>
+        </div>
+        <div class="score-gauge"><div class="score-gauge-fill" style="width:${val}%;background:${color}"></div></div>
+      </div>`;
+    }).join('');
+  }
+
+  function renderVitalsCards(sel) {
+    const el = $(sel);
+    if (!el) return;
+    if (!filteredData.length) { el.innerHTML = '<p style="color:var(--c-muted);padding:12px;">No data</p>'; return; }
+    const latest = filteredData[filteredData.length - 1];
+    const v = latest.vitals;
+    const vitals = [
+      { key: 'fcp', label: 'FCP', unit: '', fmt: fmtMs },
+      { key: 'lcp', label: 'LCP', unit: '', fmt: fmtMs },
+      { key: 'tbt', label: 'TBT', unit: '', fmt: fmtMs },
+      { key: 'cls', label: 'CLS', unit: '', fmt: (x) => x == null ? '—' : x.toFixed(3) },
+      { key: 'tti', label: 'TTI', unit: '', fmt: fmtMs },
+      { key: 'si', label: 'SI', unit: '', fmt: fmtMs },
+    ];
+    el.innerHTML = vitals.map(({ key, label, fmt }) => {
+      const val = v[key];
+      const st = vitalStatus(key, val);
+      return `<div class="vital-card">
+        <div class="vital-name">${label}</div>
+        <div class="vital-value">${fmt(val)}</div>
+        <span class="vital-badge ${st.cls}" style="background:${st.cls==='good'?'var(--c-good-bg)':st.cls==='needs-improvement'?'var(--c-warn-bg)':'var(--c-bad-bg)'};color:${st.cls==='good'?'var(--c-good)':st.cls==='needs-improvement'?'var(--c-warn)':'var(--c-bad)'}">${st.label}</span>
+      </div>`;
+    }).join('');
+  }
+
+  function destroyChart(id) {
+    if (charts[id]) { charts[id].destroy(); delete charts[id]; }
+  }
+
+  function renderScoreTrends() {
+    destroyChart('scores');
+    const canvas = $('#chart-scores');
+    if (!canvas) return;
+    if (!filteredData.length) return;
+    const labels = filteredData.map((r) => fmtDate(r.timestamp));
+    const ds = (key, color, label) => ({
+      label, data: filteredData.map((r) => r.scores[key] ?? null),
+      borderColor: color, backgroundColor: color + '20',
+      tension: 0.3, fill: false, pointRadius: 4,
+    });
+    charts['scores'] = new Chart(canvas, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [
+          ds('performance', '#6366f1', 'Performance'),
+          ds('accessibility', '#16a34a', 'Accessibility'),
+          ds('bestPractices', '#d97706', 'Best Practices'),
+          ds('seo', '#0ea5e9', 'SEO'),
+        ],
+      },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { font: { size: 11 }, boxWidth: 12 } } }, scales: { y: { min: 0, max: 100, ticks: { font: { size: 11 } } }, x: { ticks: { font: { size: 10 }, maxRotation: 30 } } } },
+    });
+  }
+
+  function renderVitalsTrends() {
+    const charts_def = [
+      { id: 'lcp', key: 'lcp', color: '#6366f1', divisor: 1000, unit: 's' },
+      { id: 'fcp', key: 'fcp', color: '#16a34a', divisor: 1000, unit: 's' },
+      { id: 'tbt', key: 'tbt', color: '#d97706', divisor: 1, unit: 'ms' },
+      { id: 'cls', key: 'cls', color: '#ef4444', divisor: 1, unit: '' },
+    ];
+    charts_def.forEach(({ id, key, color, divisor, unit }) => {
+      destroyChart(id);
+      const canvas = $(`#chart-${id}`);
+      if (!canvas || !filteredData.length) return;
+      const labels = filteredData.map((r) => fmtDate(r.timestamp));
+      const data = filteredData.map((r) => {
+        const v = r.vitals[key];
+        return v == null ? null : +(v / divisor).toFixed(3);
+      });
+      charts[id] = new Chart(canvas, {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [{ label: key.toUpperCase(), data, borderColor: color, backgroundColor: color + '15', tension: 0.3, fill: true, pointRadius: 4 }],
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            y: { ticks: { font: { size: 11 }, callback: (v) => v + unit } },
+            x: { ticks: { font: { size: 10 }, maxRotation: 30 } },
+          },
+        },
+      });
+    });
+  }
+
+  function renderResources() {
+    destroyChart('weight');
+    destroyChart('opportunities');
+
+    if (!filteredData.length) return;
+    const latest = filteredData[filteredData.length - 1];
+    const r = latest.resources;
+
+    // Page weight doughnut
+    const wCanvas = $('#chart-weight');
+    if (wCanvas) {
+      const thirdParty = r.thirdPartyKb ?? 0;
+      const firstParty = Math.max(0, (r.totalTransferKb ?? 0) - thirdParty);
+      charts['weight'] = new Chart(wCanvas, {
+        type: 'doughnut',
+        data: {
+          labels: ['First Party', 'Third Party'],
+          datasets: [{ data: [firstParty, thirdParty], backgroundColor: ['#6366f1', '#f59e0b'], borderWidth: 2, borderColor: '#fff' }],
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { font: { size: 11 }, boxWidth: 12 } } } },
+      });
+    }
+
+    // Opportunities bar
+    const oCanvas = $('#chart-opportunities');
+    if (oCanvas) {
+      charts['opportunities'] = new Chart(oCanvas, {
+        type: 'bar',
+        data: {
+          labels: ['Unused JS', 'Unused CSS', 'Unoptimized Images', 'Render Blocking'],
+          datasets: [{
+            label: 'KB savings',
+            data: [r.unusedJsKb ?? 0, r.unusedCssKb ?? 0, r.unoptimizedImagesKb ?? 0, r.renderBlockingKb ?? 0],
+            backgroundColor: ['#6366f1', '#16a34a', '#f59e0b', '#ef4444'],
+            borderRadius: 4, borderSkipped: false,
+          }],
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            y: { ticks: { font: { size: 11 }, callback: (v) => v + ' KB' } },
+            x: { ticks: { font: { size: 10 } } },
+          },
+        },
+      });
+    }
+
+    // Diagnostics
+    const diagEl = $('#diag-table');
+    if (diagEl) {
+      const rows = [
+        { name: 'Total Page Weight', val: fmtKb(r.totalTransferKb), bench: '< 500 KB recommended', status: r.totalTransferKb == null ? '' : r.totalTransferKb < 500 ? 'good' : r.totalTransferKb < 1500 ? 'needs-improvement' : 'poor' },
+        { name: 'Unused JavaScript', val: fmtKb(r.unusedJsKb), bench: '< 100 KB savings', status: r.unusedJsKb == null ? '' : r.unusedJsKb < 100 ? 'good' : r.unusedJsKb < 300 ? 'needs-improvement' : 'poor' },
+        { name: 'Unused CSS', val: fmtKb(r.unusedCssKb), bench: '< 20 KB savings', status: r.unusedCssKb == null ? '' : r.unusedCssKb < 20 ? 'good' : r.unusedCssKb < 50 ? 'needs-improvement' : 'poor' },
+        { name: 'Third-party Transfer', val: fmtKb(r.thirdPartyKb), bench: '< 100 KB', status: r.thirdPartyKb == null ? '' : r.thirdPartyKb < 100 ? 'good' : r.thirdPartyKb < 300 ? 'needs-improvement' : 'poor' },
+      ];
+      diagEl.innerHTML = rows.map(({ name, val, bench, status }) => `
+        <div class="diag-row">
+          <span class="diag-name">${name}</span>
+          <div class="diag-right">
+            <span class="diag-bench">${bench}</span>
+            <span class="diag-val">${val}</span>
+            ${status ? `<span class="pill ${status}">${status === 'good' ? '✓' : status === 'needs-improvement' ? '!' : '✕'}</span>` : ''}
+          </div>
+        </div>`).join('');
+    }
+  }
+
+  function renderHistory() {
+    const tbody = $('#history-tbody');
+    if (!tbody) return;
+    if (!filteredData.length) {
+      tbody.innerHTML = `<tr><td colspan="12" style="text-align:center;padding:32px;color:var(--c-muted);">No runs yet. Trigger a workflow run from the Actions tab.</td></tr>`;
+      return;
+    }
+    const sorted = [...filteredData].reverse();
+    tbody.innerHTML = sorted.map((r) => {
+      const s = r.scores;
+      const v = r.vitals;
+      const res = r.resources;
+      return `<tr>
+        <td>${fmtDate(r.timestamp)}</td>
+        <td><span class="pill ${r.device}">${r.device}</span></td>
+        <td><span class="pill ${pillCls(s.performance)}">${s.performance ?? '—'}</span></td>
+        <td>${s.accessibility ?? '—'}</td>
+        <td>${s.bestPractices ?? '—'}</td>
+        <td>${s.seo ?? '—'}</td>
+        <td>${fmtMs(v.fcp)}</td>
+        <td>${fmtMs(v.lcp)}</td>
+        <td>${fmtMs(v.tbt)}</td>
+        <td>${v.cls == null ? '—' : v.cls.toFixed(3)}</td>
+        <td>${fmtMs(v.tti)}</td>
+        <td>${fmtKb(res.totalTransferKb)}</td>
+      </tr>`;
+    }).join('');
+  }
+
+  // ── Nav ───────────────────────────────────────────────────────────────────
+  const pageTitles = {
+    summary: 'Summary',
+    vitals: 'Core Web Vitals',
+    'score-trends': 'Score Trends',
+    'vitals-trends': 'Vitals Trends',
+    resources: 'Resources',
+    history: 'Run History',
+  };
+
+  document.querySelectorAll('.nav-item').forEach((item) => {
+    item.addEventListener('click', () => {
+      const page = item.dataset.page;
+      document.querySelectorAll('.nav-item').forEach((i) => i.classList.remove('active'));
+      item.classList.add('active');
+      document.querySelectorAll('.page').forEach((p) => p.classList.remove('active'));
+      $(`#page-${page}`).classList.add('active');
+      $('#page-title').textContent = pageTitles[page] || page;
+      // Re-render charts for newly visible pages
+      if (page === 'score-trends') renderScoreTrends();
+      if (page === 'vitals-trends') renderVitalsTrends();
+      if (page === 'resources') renderResources();
+    });
+  });
+
+  // ── Device toggle ─────────────────────────────────────────────────────────
+  document.querySelectorAll('.device-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.device-btn').forEach((b) => b.classList.remove('active'));
+      btn.classList.add('active');
+      activeDevice = btn.dataset.device;
+      applyFilters();
+    });
+  });
+
+  // ── Filter buttons ────────────────────────────────────────────────────────
+  $('#apply-btn').addEventListener('click', applyFilters);
+  $('#reset-btn').addEventListener('click', () => {
+    initDatePickers();
+    applyFilters();
+  });
+
+  // ── Boot ──────────────────────────────────────────────────────────────────
+  loadData();
+})();
+</script>
+
+<footer style="text-align:center;padding:20px 24px;font-size:11px;color:#9ca3af;border-top:1px solid var(--c-border);margin-top:8px;">
+  mewatch Performance Dashboard &middot; Powered by Lighthouse CI &middot; Runs nightly at 9:30&nbsp;PM&nbsp;IST
+</footer>
+
+</body>
+</html>

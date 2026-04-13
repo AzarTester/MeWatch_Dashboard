@@ -1,0 +1,14 @@
+{
+  "name": "mewatch-perf-scripts",
+  "version": "1.0.0",
+  "description": "Lighthouse runner for mewatch.sg performance dashboard",
+  "main": "run-perf-test.js",
+  "scripts": {
+    "test": "node run-perf-test.js",
+    "test:local": "TARGET_URL=https://www.mewatch.sg/ node run-perf-test.js"
+  },
+  "dependencies": {
+    "lighthouse": "^11.0.0",
+    "chrome-launcher": "^1.1.0"
+  }
+}
