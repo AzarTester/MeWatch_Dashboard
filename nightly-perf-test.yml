@@ -28,7 +28,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y libasound2t64 || sudo apt-get install -y liboss4-salsa-asound2
-            npm install
+          npm install
 
       - name: Install Chrome dependencies
         run: |
@@ -49,7 +49,6 @@ jobs:
         env:
           TARGET_URL: 'https://www.mewatch.sg/'
         run: |
-          cd scripts
           node scripts/run-perf-test.js
 
       - name: Commit updated results
