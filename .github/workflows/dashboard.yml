@@ -42,7 +42,6 @@ jobs:
             libxdamage1 \
             libxrandr2 \
             libgbm1 \
-            libasound2
 
       - name: Run Lighthouse tests
         env:
