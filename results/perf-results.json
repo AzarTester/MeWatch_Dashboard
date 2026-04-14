@@ -268,5 +268,59 @@
       "renderBlockingKb": 7,
       "thirdPartyKb": 26022
     }
+  },
+  {
+    "timestamp": "2026-04-14T17:05:25.996Z",
+    "url": "https://www.mewatch.sg/",
+    "device": "desktop",
+    "scores": {
+      "performance": 27,
+      "accessibility": 78,
+      "bestPractices": 56,
+      "seo": 83
+    },
+    "vitals": {
+      "fcp": 5175.885000000002,
+      "lcp": 11016.941500000004,
+      "tbt": 999.0000000000055,
+      "cls": 0.009092,
+      "tti": 15524.394500000011,
+      "si": 8988.320261339268
+    },
+    "resources": {
+      "totalTransferKb": 36454,
+      "unusedJsKb": 8,
+      "unusedCssKb": 0,
+      "unoptimizedImagesKb": 0,
+      "renderBlockingKb": 1,
+      "thirdPartyKb": 27360
+    }
+  },
+  {
+    "timestamp": "2026-04-14T17:07:17.566Z",
+    "url": "https://www.mewatch.sg/",
+    "device": "mobile",
+    "scores": {
+      "performance": 24,
+      "accessibility": 78,
+      "bestPractices": 52,
+      "seo": 86
+    },
+    "vitals": {
+      "fcp": 15391.683000000003,
+      "lcp": 50265.15949999998,
+      "tbt": 10280.192500000034,
+      "cls": 0.077296,
+      "tti": 98903.95700000014,
+      "si": 46112.82522773824
+    },
+    "resources": {
+      "totalTransferKb": 35068,
+      "unusedJsKb": 57,
+      "unusedCssKb": 8,
+      "unoptimizedImagesKb": 0,
+      "renderBlockingKb": 8,
+      "thirdPartyKb": 26039
+    }
   }
 ]
