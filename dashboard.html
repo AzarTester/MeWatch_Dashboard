@@ -1,804 +1,941 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>mewatch Performance Dashboard</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <style>
-  :root {
-    --c-bg: #f8f9fb;
-    --c-surface: #ffffff;
-    --c-border: #e2e6ed;
-    --c-text: #1a1d23;
-    --c-muted: #6b7280;
-    --c-accent: #6366f1;
-    --c-accent-light: #eef2ff;
-    --c-good: #16a34a;
-    --c-good-bg: #dcfce7;
-    --c-warn: #d97706;
-    --c-warn-bg: #fef3c7;
-    --c-bad: #dc2626;
-    --c-bad-bg: #fee2e2;
-    --c-score-high: #16a34a;
-    --c-score-mid: #d97706;
-    --c-score-low: #dc2626;
-    --sidebar-w: 220px;
-    --header-h: 56px;
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--c-bg); color: var(--c-text); font-size: 14px; line-height: 1.5; }
+:root {
+  --bg: #0d0f14;
+  --bg2: #141720;
+  --bg3: #1c2030;
+  --border: rgba(255,255,255,0.07);
+  --border2: rgba(255,255,255,0.13);
+  --text: #e8eaf0;
+  --muted: #8890a4;
+  --accent: #4f8cff;
+  --accent2: #7c5cfc;
+  --good: #34d399;
+  --warn: #fbbf24;
+  --bad: #f87171;
+  --radius: 10px;
+  --font: 'Inter', 'Segoe UI', system-ui, sans-serif;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--text); font-family: var(--font); min-height: 100vh; }
+a { color: var(--accent); text-decoration: none; }
 
-  /* Layout */
-  #app { display: flex; min-height: 100vh; }
-  .sidebar {
-    width: var(--sidebar-w);
-    background: var(--c-surface);
-    border-right: 1px solid var(--c-border);
-    display: flex; flex-direction: column;
-    position: fixed; top: 0; left: 0; bottom: 0; z-index: 10;
-  }
-  .sidebar-brand {
-    padding: 14px 16px;
-    border-bottom: 1px solid var(--c-border);
-    display: flex; align-items: center; gap: 10px;
-  }
-  .brand-icon {
-    width: 32px; height: 32px; border-radius: 8px;
-    background: var(--c-accent); display: flex; align-items: center; justify-content: center;
-  }
-  .brand-icon svg { width: 18px; height: 18px; fill: #fff; }
-  .brand-text { font-weight: 600; font-size: 13px; line-height: 1.2; }
-  .brand-sub { font-size: 11px; color: var(--c-muted); }
-  .nav { padding: 8px 0; flex: 1; overflow-y: auto; }
-  .nav-section { padding: 16px 16px 4px; font-size: 10px; font-weight: 600; letter-spacing: .08em; color: var(--c-muted); text-transform: uppercase; }
-  .nav-item {
-    display: flex; align-items: center; gap: 8px;
-    padding: 7px 16px; cursor: pointer; font-size: 13px;
-    color: var(--c-muted); transition: all .12s; border-radius: 0;
-  }
-  .nav-item:hover { background: var(--c-bg); color: var(--c-text); }
-  .nav-item.active { background: var(--c-accent-light); color: var(--c-accent); font-weight: 500; }
-  .nav-item svg { width: 15px; height: 15px; flex-shrink: 0; }
-  .main { margin-left: var(--sidebar-w); flex: 1; display: flex; flex-direction: column; }
-  .topbar {
-    height: var(--header-h); background: var(--c-surface);
-    border-bottom: 1px solid var(--c-border);
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 0 24px; position: sticky; top: 0; z-index: 9;
-  }
-  .topbar-left { display: flex; align-items: center; gap: 12px; }
-  .page-title { font-weight: 600; font-size: 15px; }
-  .topbar-right { display: flex; align-items: center; gap: 10px; }
-  .content { padding: 24px; }
+/* TOPBAR */
+.topbar {
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  padding: 0 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 58px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.topbar-left { display: flex; align-items: center; gap: 14px; }
+.logo-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 8px var(--accent); }
+.topbar h1 { font-size: 15px; font-weight: 600; letter-spacing: 0.01em; }
+.topbar-url { font-size: 12px; color: var(--muted); background: var(--bg3); padding: 3px 10px; border-radius: 20px; border: 1px solid var(--border2); }
+.live-badge { font-size: 11px; background: rgba(52,211,153,0.12); color: var(--good); padding: 3px 9px; border-radius: 20px; border: 1px solid rgba(52,211,153,0.25); display: flex; align-items: center; gap: 5px; }
+.live-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--good); animation: pulse 2s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
 
-  /* Filters bar */
-  .filters-bar {
-    background: var(--c-surface); border: 1px solid var(--c-border); border-radius: 10px;
-    padding: 14px 18px; margin-bottom: 20px;
-    display: flex; align-items: center; flex-wrap: wrap; gap: 12px;
-  }
-  .filter-group { display: flex; align-items: center; gap: 6px; }
-  .filter-label { font-size: 12px; color: var(--c-muted); font-weight: 500; }
-  .filter-input {
-    border: 1px solid var(--c-border); border-radius: 6px;
-    padding: 5px 9px; font-size: 13px; background: var(--c-bg); color: var(--c-text);
-    outline: none; transition: border .15s;
-  }
-  .filter-input:focus { border-color: var(--c-accent); }
-  .device-toggle { display: flex; border: 1px solid var(--c-border); border-radius: 6px; overflow: hidden; }
-  .device-btn {
-    padding: 5px 12px; font-size: 12px; cursor: pointer; background: none; border: none;
-    color: var(--c-muted); transition: all .12s; font-weight: 500;
-  }
-  .device-btn.active { background: var(--c-accent); color: #fff; }
-  .btn { padding: 6px 14px; border-radius: 6px; font-size: 13px; cursor: pointer; transition: all .12s; font-weight: 500; border: 1px solid var(--c-border); background: var(--c-bg); color: var(--c-text); }
-  .btn:hover { background: var(--c-border); }
-  .btn-primary { background: var(--c-accent); color: #fff; border-color: var(--c-accent); }
-  .btn-primary:hover { background: #4f46e5; }
-  .ml-auto { margin-left: auto; }
+/* LAYOUT */
+.shell { display: flex; }
+.sidebar {
+  width: 220px;
+  min-height: calc(100vh - 58px);
+  background: var(--bg2);
+  border-right: 1px solid var(--border);
+  padding: 24px 0;
+  flex-shrink: 0;
+  position: sticky;
+  top: 58px;
+  height: calc(100vh - 58px);
+  overflow-y: auto;
+}
+.sidebar-section { padding: 0 16px 8px; font-size: 10px; font-weight: 600; letter-spacing: 0.08em; color: var(--muted); text-transform: uppercase; margin-top: 16px; }
+.sidebar-link {
+  display: flex; align-items: center; gap: 9px;
+  padding: 8px 16px;
+  font-size: 13px;
+  color: var(--muted);
+  cursor: pointer;
+  border-left: 2px solid transparent;
+  transition: all .15s;
+  user-select: none;
+}
+.sidebar-link:hover { color: var(--text); background: var(--bg3); }
+.sidebar-link.active { color: var(--accent); border-left-color: var(--accent); background: rgba(79,140,255,0.07); }
+.sidebar-icon { font-size: 14px; width: 16px; text-align: center; }
 
-  /* Score cards */
-  .score-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 20px; }
-  .score-card {
-    background: var(--c-surface); border: 1px solid var(--c-border); border-radius: 10px;
-    padding: 16px; display: flex; flex-direction: column; gap: 8px;
-  }
-  .score-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--c-muted); }
-  .score-value-row { display: flex; align-items: flex-end; gap: 8px; }
-  .score-num { font-size: 36px; font-weight: 700; line-height: 1; }
-  .score-num.high { color: var(--c-score-high); }
-  .score-num.mid { color: var(--c-score-mid); }
-  .score-num.low { color: var(--c-score-low); }
-  .score-badge {
-    margin-bottom: 4px; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 4px;
-  }
-  .score-badge.good { background: var(--c-good-bg); color: var(--c-good); }
-  .score-badge.needs-improvement { background: var(--c-warn-bg); color: var(--c-warn); }
-  .score-badge.poor { background: var(--c-bad-bg); color: var(--c-bad); }
-  .score-gauge { height: 4px; background: var(--c-border); border-radius: 2px; overflow: hidden; }
-  .score-gauge-fill { height: 100%; border-radius: 2px; transition: width .4s; }
+/* MAIN */
+.main { flex: 1; padding: 28px 32px; overflow-x: hidden; }
 
-  /* Section layout */
-  .section { margin-bottom: 24px; }
-  .section-title { font-size: 14px; font-weight: 600; margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
-  .section-title svg { width: 15px; height: 15px; color: var(--c-accent); }
-  .card { background: var(--c-surface); border: 1px solid var(--c-border); border-radius: 10px; padding: 18px; }
-  .card-title { font-size: 13px; font-weight: 600; margin-bottom: 14px; color: var(--c-text); }
-  .card-sub { font-size: 11px; color: var(--c-muted); margin-top: 4px; font-weight: normal; }
-  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-  .chart-wrap { position: relative; height: 200px; }
+/* FILTERS */
+.filters {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  background: var(--bg2);
+  padding: 14px 18px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  margin-bottom: 24px;
+}
+.filter-label { font-size: 12px; color: var(--muted); white-space: nowrap; }
+.filter-group { display: flex; align-items: center; gap: 8px; }
+select, input[type="date"] {
+  background: var(--bg3);
+  color: var(--text);
+  border: 1px solid var(--border2);
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-family: var(--font);
+  outline: none;
+  cursor: pointer;
+}
+select:focus, input[type="date"]:focus { border-color: var(--accent); }
+.btn {
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-family: var(--font);
+  cursor: pointer;
+  border: 1px solid var(--border2);
+  transition: all .15s;
+}
+.btn-primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+.btn-primary:hover { opacity: .85; }
+.btn-ghost { background: transparent; color: var(--muted); }
+.btn-ghost:hover { background: var(--bg3); color: var(--text); }
+.device-toggle { display: flex; background: var(--bg3); border-radius: 6px; padding: 2px; gap: 2px; }
+.dev-btn { padding: 4px 12px; border-radius: 4px; font-size: 12px; cursor: pointer; color: var(--muted); background: transparent; border: none; font-family: var(--font); transition: all .15s; }
+.dev-btn.active { background: var(--accent); color: #fff; }
 
-  /* Vitals table */
-  .vitals-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
-  .vital-card {
-    background: var(--c-bg); border: 1px solid var(--c-border); border-radius: 8px; padding: 12px;
-  }
-  .vital-name { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--c-muted); }
-  .vital-value { font-size: 22px; font-weight: 700; margin: 4px 0 2px; }
-  .vital-unit { font-size: 12px; font-weight: 400; color: var(--c-muted); }
-  .vital-badge { display: inline-block; font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 4px; }
+/* SECTION HEADERS */
+.section-header { display: flex; align-items: baseline; gap: 10px; margin-bottom: 14px; margin-top: 28px; }
+.section-header:first-child { margin-top: 0; }
+.section-title { font-size: 14px; font-weight: 600; }
+.section-sub { font-size: 12px; color: var(--muted); }
 
-  /* Tables */
-  .table-wrap { overflow-x: auto; }
-  table { width: 100%; border-collapse: collapse; font-size: 12px; }
-  th { text-align: left; font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: var(--c-muted); padding: 8px 10px; border-bottom: 1px solid var(--c-border); }
-  td { padding: 8px 10px; border-bottom: 1px solid var(--c-bg); vertical-align: middle; }
-  tr:last-child td { border-bottom: none; }
-  tr:hover td { background: var(--c-bg); }
-  .pill {
-    display: inline-block; padding: 2px 7px; border-radius: 4px; font-size: 11px; font-weight: 600;
-  }
-  .pill.good { background: var(--c-good-bg); color: var(--c-good); }
-  .pill.needs-improvement { background: var(--c-warn-bg); color: var(--c-warn); }
-  .pill.poor { background: var(--c-bad-bg); color: var(--c-bad); }
-  .pill.desktop { background: #ede9fe; color: #6d28d9; }
-  .pill.mobile { background: #fce7f3; color: #be185d; }
+/* SUMMARY CARDS */
+.score-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; }
+.score-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.score-card-label { font-size: 11px; color: var(--muted); font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em; }
+.score-card-value { font-size: 32px; font-weight: 700; letter-spacing: -0.02em; }
+.score-card-delta { font-size: 12px; display: flex; align-items: center; gap: 4px; }
+.delta-up { color: var(--good); }
+.delta-down { color: var(--bad); }
+.delta-flat { color: var(--muted); }
+.score-bar { height: 4px; border-radius: 2px; background: var(--bg3); overflow: hidden; margin-top: 4px; }
+.score-bar-fill { height: 100%; border-radius: 2px; transition: width .6s ease; }
 
-  /* Diagnostics */
-  .diag-row { display: flex; align-items: center; justify-content: space-between; padding: 9px 0; border-bottom: 1px solid var(--c-border); }
-  .diag-row:last-child { border-bottom: none; }
-  .diag-name { font-size: 13px; }
-  .diag-right { display: flex; align-items: center; gap: 10px; }
-  .diag-val { font-weight: 600; font-size: 13px; }
-  .diag-bench { font-size: 11px; color: var(--c-muted); }
+/* CWV GRID */
+.cwv-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
+.cwv-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+}
+.cwv-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px; }
+.cwv-name { font-size: 12px; color: var(--muted); }
+.cwv-badge { font-size: 10px; padding: 2px 7px; border-radius: 10px; font-weight: 600; }
+.badge-good { background: rgba(52,211,153,.15); color: var(--good); }
+.badge-needs { background: rgba(251,191,36,.15); color: var(--warn); }
+.badge-poor { background: rgba(248,113,113,.15); color: var(--bad); }
+.cwv-val { font-size: 22px; font-weight: 700; letter-spacing: -0.02em; }
+.cwv-threshold { font-size: 11px; color: var(--muted); margin-top: 2px; }
 
-  /* Empty state */
-  .empty { text-align: center; padding: 48px 24px; color: var(--c-muted); }
-  .empty h3 { font-size: 16px; margin-bottom: 8px; color: var(--c-text); }
-  .empty p { font-size: 13px; line-height: 1.6; }
-  .empty code { background: var(--c-bg); padding: 2px 6px; border-radius: 4px; font-family: monospace; font-size: 12px; }
+/* CHARTS */
+.chart-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+.chart-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px;
+}
+.chart-title { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+.chart-desc { font-size: 11px; color: var(--muted); margin-bottom: 16px; }
+.chart-wrap { position: relative; width: 100%; }
 
-  /* Tab pages */
-  .page { display: none; }
-  .page.active { display: block; }
+/* FULL WIDTH CHART */
+.chart-full {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px;
+  margin-bottom: 24px;
+}
 
-  /* Responsive */
-  @media (max-width: 900px) {
-    .score-grid { grid-template-columns: repeat(2, 1fr); }
-    .two-col { grid-template-columns: 1fr; }
-    .vitals-grid { grid-template-columns: repeat(2, 1fr); }
-  }
-  @media (max-width: 600px) {
-    :root { --sidebar-w: 0px; }
-    .sidebar { display: none; }
-    .score-grid { grid-template-columns: repeat(2, 1fr); }
-    .vitals-grid { grid-template-columns: 1fr 1fr; }
-  }
+/* DATA TABLE */
+.table-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  margin-bottom: 24px;
+}
+.table-header {
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.table-title { font-size: 13px; font-weight: 600; }
+table { width: 100%; border-collapse: collapse; font-size: 12px; }
+thead th {
+  padding: 9px 14px;
+  text-align: left;
+  color: var(--muted);
+  font-weight: 500;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background: var(--bg3);
+  border-bottom: 1px solid var(--border);
+}
+tbody tr { border-bottom: 1px solid var(--border); transition: background .1s; }
+tbody tr:last-child { border-bottom: none; }
+tbody tr:hover { background: var(--bg3); }
+tbody td { padding: 10px 14px; vertical-align: middle; }
+.score-pill { display: inline-flex; align-items: center; justify-content: center; width: 38px; height: 22px; border-radius: 4px; font-size: 11px; font-weight: 700; }
+.pill-good { background: rgba(52,211,153,.15); color: var(--good); }
+.pill-needs { background: rgba(251,191,36,.15); color: var(--warn); }
+.pill-poor { background: rgba(248,113,113,.15); color: var(--bad); }
+.tag-device { font-size: 10px; padding: 2px 7px; border-radius: 10px; border: 1px solid var(--border2); color: var(--muted); }
 
-  /* Pagination */
-  .pagination {
-    display: flex; align-items: center; justify-content: flex-end;
-    gap: 4px; margin-top: 14px; flex-wrap: wrap;
-  }
-  .page-btn {
-    min-width: 32px; height: 32px; padding: 0 8px;
-    border: 1px solid var(--c-border); border-radius: 6px;
-    background: var(--c-surface); color: var(--c-muted);
-    font-size: 12px; font-weight: 500; cursor: pointer;
-    display: flex; align-items: center; justify-content: center;
-    transition: all .12s;
-  }
-  .page-btn:hover:not(:disabled) { background: var(--c-bg); color: var(--c-text); }
-  .page-btn.active { background: var(--c-accent); color: #fff; border-color: var(--c-accent); }
-  .page-btn:disabled { opacity: .4; cursor: default; }
-  .page-info { font-size: 12px; color: var(--c-muted); margin-right: 4px; }
+/* RESOURCE GRID */
+.resource-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
 
-  /* PDF button */
-  @media print {
-    .sidebar, .topbar, .filters-bar .btn, .device-toggle, #pdf-btn { display: none !important; }
-    .main { margin-left: 0; }
-    body { background: #fff; }
-    .card { break-inside: avoid; }
-  }
+/* EMPTY STATE */
+.empty-state { padding: 60px; text-align: center; color: var(--muted); line-height: 1.8; }
+
+/* FOOTER */
+.footer { border-top: 1px solid var(--border); padding: 16px 32px; font-size: 11px; color: var(--muted); display: flex; justify-content: space-between; align-items: center; margin-top: 16px; }
+
+/* RESPONSIVE */
+@media (max-width: 900px) {
+  .sidebar { display: none; }
+  .score-grid { grid-template-columns: repeat(2, 1fr); }
+  .cwv-grid { grid-template-columns: repeat(2, 1fr); }
+  .chart-row { grid-template-columns: 1fr; }
+  .resource-grid { grid-template-columns: 1fr; }
+  .main { padding: 16px; }
+  .topbar { padding: 0 16px; }
+}
 </style>
 </head>
 <body>
-<div id="app">
 
-<!-- Sidebar -->
-<nav class="sidebar">
-  <div class="sidebar-brand">
-    <div class="brand-icon">
-      <svg viewBox="0 0 24 24"><path d="M3 5h18v14H3V5zm2 2v10h14V7H5zm2 2h2v2H7V9zm4 0h2v2h-2V9zm4 0h2v2h-2V9zM7 13h10v2H7v-2z"/></svg>
-    </div>
-    <div>
-      <div class="brand-text">Perf Dashboard</div>
-      <div class="brand-sub">mewatch.sg</div>
-    </div>
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="topbar-left">
+    <div class="logo-dot"></div>
+    <h1>Perf Dashboard</h1>
+    <span class="topbar-url">mewatch.sg</span>
   </div>
-  <div class="nav">
-    <div class="nav-section">Overview</div>
-    <div class="nav-item active" data-page="summary">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
-      Summary
-    </div>
-    <div class="nav-item" data-page="vitals">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-      Core Web Vitals
-    </div>
-    <div class="nav-section">Trends</div>
-    <div class="nav-item" data-page="score-trends">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
-      Score Trends
-    </div>
-    <div class="nav-item" data-page="vitals-trends">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-      Vitals Trends
-    </div>
-    <div class="nav-section">Details</div>
-    <div class="nav-item" data-page="resources">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-      Resources
-    </div>
-    <div class="nav-item" data-page="history">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-      Run History
-    </div>
+  <div style="display:flex;align-items:center;gap:10px;">
+    <span class="live-badge"><span class="live-dot"></span>Lighthouse CI</span>
+    <span style="font-size:12px;color:var(--muted);" id="last-updated"></span>
   </div>
-</nav>
+</div>
 
-<!-- Main -->
-<div class="main">
-  <div class="topbar">
-    <div class="topbar-left">
-      <span class="page-title" id="page-title">Summary</span>
-    </div>
-    <div class="topbar-right">
-      <button class="btn" id="pdf-btn" onclick="window.print()">⬇ Save as PDF</button>
-    </div>
-  </div>
+<div class="shell">
 
-  <div class="content">
-    <!-- Filters -->
-    <div class="filters-bar">
+  <!-- SIDEBAR -->
+  <nav class="sidebar">
+    <div class="sidebar-section">Overview</div>
+    <div class="sidebar-link active" onclick="scrollToSection('summary', this)"><span class="sidebar-icon">◈</span> Summary</div>
+    <div class="sidebar-link" onclick="scrollToSection('cwv', this)"><span class="sidebar-icon">⬡</span> Core Web Vitals</div>
+    <div class="sidebar-section">Trends</div>
+    <div class="sidebar-link" onclick="scrollToSection('trends', this)"><span class="sidebar-icon">↗</span> Score Trends</div>
+    <div class="sidebar-link" onclick="scrollToSection('cwv-trends', this)"><span class="sidebar-icon">≋</span> Vitals Trends</div>
+    <div class="sidebar-section">Details</div>
+    <div class="sidebar-link" onclick="scrollToSection('resources', this)"><span class="sidebar-icon">⊞</span> Resources</div>
+    <div class="sidebar-link" onclick="scrollToSection('history', this)"><span class="sidebar-icon">⊟</span> Run History</div>
+  </nav>
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <!-- FILTERS -->
+    <div class="filters">
+      <span class="filter-label">Filters</span>
       <div class="filter-group">
         <span class="filter-label">From</span>
-        <input type="date" class="filter-input" id="date-from" />
+        <input type="date" id="date-from"/>
       </div>
       <div class="filter-group">
         <span class="filter-label">To</span>
-        <input type="date" class="filter-input" id="date-to" />
+        <input type="date" id="date-to"/>
       </div>
       <div class="device-toggle">
-        <button class="device-btn active" data-device="desktop">Desktop</button>
-        <button class="device-btn" data-device="mobile">Mobile</button>
+        <button class="dev-btn active" id="btn-desktop" onclick="setDevice('desktop')">Desktop</button>
+        <button class="dev-btn" id="btn-mobile" onclick="setDevice('mobile')">Mobile</button>
       </div>
-      <div class="ml-auto" style="display:flex;gap:8px;">
-        <button class="btn" id="reset-btn">Reset</button>
-        <button class="btn btn-primary" id="apply-btn">Apply</button>
-      </div>
+      <button class="btn btn-ghost" onclick="resetFilters()">Reset</button>
+      <button class="btn btn-primary" onclick="applyFilters()">Apply</button>
+      <span id="run-count" style="font-size:12px;color:var(--muted);margin-left:auto;"></span>
     </div>
 
-    <!-- PAGE: Summary -->
-    <div class="page active" id="page-summary">
+    <!-- SUMMARY SCORES -->
+    <div id="summary">
+      <div class="section-header">
+        <span class="section-title">Lighthouse Scores</span>
+        <span class="section-sub" id="score-date-range">—</span>
+      </div>
       <div class="score-grid" id="score-cards"></div>
-      <div class="section">
-        <div class="section-title">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-          Core Web Vitals — Latest run
+    </div>
+
+    <!-- CORE WEB VITALS -->
+    <div id="cwv">
+      <div class="section-header">
+        <span class="section-title">Core Web Vitals</span>
+        <span class="section-sub">Latest run</span>
+      </div>
+      <div class="cwv-grid" id="cwv-cards"></div>
+    </div>
+
+    <!-- SCORE TRENDS -->
+    <div id="trends">
+      <div class="section-header">
+        <span class="section-title">Score Trends</span>
+        <span class="section-sub">Weekly over selected range</span>
+      </div>
+      <div class="chart-full">
+        <div class="chart-title">Lighthouse Category Scores</div>
+        <div class="chart-desc">Performance · Accessibility · Best Practices · SEO</div>
+        <div class="chart-wrap" style="height:280px;"><canvas id="scoresTrendChart" role="img" aria-label="Line chart showing Lighthouse score trends over time">Score trends over time.</canvas></div>
+      </div>
+    </div>
+
+    <!-- CWV TRENDS -->
+    <div id="cwv-trends">
+      <div class="section-header">
+        <span class="section-title">Vitals Trends</span>
+        <span class="section-sub">Core Web Vitals over selected range</span>
+      </div>
+      <div class="chart-row">
+        <div class="chart-card">
+          <div class="chart-title">LCP — Largest Contentful Paint</div>
+          <div class="chart-desc">Good ≤ 2.5s · Needs Improvement ≤ 4.0s · Poor &gt; 4.0s</div>
+          <div class="chart-wrap" style="height:200px;"><canvas id="lcpChart" role="img" aria-label="LCP trend chart">LCP over time.</canvas></div>
         </div>
-        <div class="card">
-          <div class="vitals-grid" id="vitals-cards"></div>
+        <div class="chart-card">
+          <div class="chart-title">FCP — First Contentful Paint</div>
+          <div class="chart-desc">Good ≤ 1.8s · Needs Improvement ≤ 3.0s · Poor &gt; 3.0s</div>
+          <div class="chart-wrap" style="height:200px;"><canvas id="fcpChart" role="img" aria-label="FCP trend chart">FCP over time.</canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">TBT — Total Blocking Time</div>
+          <div class="chart-desc">Good ≤ 200ms · Needs Improvement ≤ 600ms · Poor &gt; 600ms</div>
+          <div class="chart-wrap" style="height:200px;"><canvas id="tbtChart" role="img" aria-label="TBT trend chart">TBT over time.</canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">CLS — Cumulative Layout Shift</div>
+          <div class="chart-desc">Good ≤ 0.1 · Needs Improvement ≤ 0.25 · Poor &gt; 0.25</div>
+          <div class="chart-wrap" style="height:200px;"><canvas id="clsChart" role="img" aria-label="CLS trend chart">CLS over time.</canvas></div>
         </div>
       </div>
     </div>
 
-    <!-- PAGE: Core Web Vitals -->
-    <div class="page" id="page-vitals">
-      <div class="section">
-        <div class="card">
-          <div class="card-title">Core Web Vitals — Latest run</div>
-          <div class="vitals-grid" id="vitals-cards-2"></div>
+    <!-- RESOURCES -->
+    <div id="resources">
+      <div class="section-header">
+        <span class="section-title">Resource Diagnostics</span>
+        <span class="section-sub">Latest run</span>
+      </div>
+      <div class="resource-grid">
+        <div class="chart-card">
+          <div class="chart-title">Page Weight Breakdown</div>
+          <div class="chart-desc">Transfer size composition (KB)</div>
+          <div class="chart-wrap" style="height:220px;"><canvas id="weightChart" role="img" aria-label="Doughnut chart showing page weight breakdown">Page weight breakdown.</canvas></div>
         </div>
+        <div class="chart-card">
+          <div class="chart-title">Opportunities (KB savings)</div>
+          <div class="chart-desc">Unused JS · Unused CSS · Unoptimized images</div>
+          <div class="chart-wrap" style="height:220px;"><canvas id="oppChart" role="img" aria-label="Bar chart showing savings opportunities">Opportunities.</canvas></div>
+        </div>
+      </div>
+      <div class="table-card">
+        <div class="table-header">
+          <span class="table-title">Diagnostic Metrics</span>
+        </div>
+        <table>
+          <thead><tr>
+            <th>Metric</th><th>Value</th><th>Benchmark</th><th>Status</th>
+          </tr></thead>
+          <tbody id="diag-table"></tbody>
+        </table>
       </div>
     </div>
 
-    <!-- PAGE: Score Trends -->
-    <div class="page" id="page-score-trends">
-      <div class="section">
-        <div class="card">
-          <div class="card-title">Lighthouse Category Scores
-            <span class="card-sub">Performance · Accessibility · Best Practices · SEO</span>
-          </div>
-          <div class="chart-wrap"><canvas id="chart-scores"></canvas></div>
+    <!-- HISTORY TABLE -->
+    <div id="history">
+      <div class="section-header">
+        <span class="section-title">Run History</span>
+        <span class="section-sub">All test runs in selected range</span>
+      </div>
+      <div class="table-card">
+        <div class="table-header">
+          <span class="table-title">All Runs</span>
+          <span style="font-size:12px;color:var(--muted);" id="table-count"></span>
         </div>
+        <table>
+          <thead><tr>
+            <th>Date</th><th>Device</th><th>Perf</th><th>A11y</th><th>BP</th><th>SEO</th>
+            <th>FCP</th><th>LCP</th><th>TBT</th><th>CLS</th><th>TTI</th><th>Transfer</th>
+          </tr></thead>
+          <tbody id="history-table"></tbody>
+        </table>
       </div>
     </div>
 
-    <!-- PAGE: Vitals Trends -->
-    <div class="page" id="page-vitals-trends">
-      <div class="two-col">
-        <div class="card">
-          <div class="card-title">LCP — Largest Contentful Paint
-            <span class="card-sub">Good ≤2.5s · Needs Improvement ≤4.0s · Poor >4.0s</span>
-          </div>
-          <div class="chart-wrap"><canvas id="chart-lcp"></canvas></div>
-        </div>
-        <div class="card">
-          <div class="card-title">FCP — First Contentful Paint
-            <span class="card-sub">Good ≤1.8s · Needs Improvement ≤3.0s · Poor >3.0s</span>
-          </div>
-          <div class="chart-wrap"><canvas id="chart-fcp"></canvas></div>
-        </div>
-        <div class="card">
-          <div class="card-title">TBT — Total Blocking Time
-            <span class="card-sub">Good ≤200ms · Needs Improvement ≤600ms · Poor >600ms</span>
-          </div>
-          <div class="chart-wrap"><canvas id="chart-tbt"></canvas></div>
-        </div>
-        <div class="card">
-          <div class="card-title">CLS — Cumulative Layout Shift
-            <span class="card-sub">Good ≤0.1 · Needs Improvement ≤0.25 · Poor >0.25</span>
-          </div>
-          <div class="chart-wrap"><canvas id="chart-cls"></canvas></div>
-        </div>
-      </div>
-    </div>
+  </main>
+</div>
 
-    <!-- PAGE: Resources -->
-    <div class="page" id="page-resources">
-      <div class="two-col">
-        <div class="card">
-          <div class="card-title">Page Weight Breakdown
-            <span class="card-sub">Transfer size composition (KB)</span>
-          </div>
-          <div class="chart-wrap"><canvas id="chart-weight"></canvas></div>
-        </div>
-        <div class="card">
-          <div class="card-title">Opportunities (KB savings)
-            <span class="card-sub">Unused JS · Unused CSS · Unoptimized images</span>
-          </div>
-          <div class="chart-wrap"><canvas id="chart-opportunities"></canvas></div>
-        </div>
-      </div>
-      <div class="section">
-        <div class="card">
-          <div class="card-title">Diagnostic Metrics</div>
-          <div id="diag-table"></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- PAGE: History -->
-    <div class="page" id="page-history">
-      <div class="card">
-        <div class="card-title">All Runs</div>
-        <div class="table-wrap">
-          <table id="history-table">
-            <thead>
-              <tr>
-                <th>Date</th><th>Device</th>
-                <th>Perf</th><th>A11y</th><th>BP</th><th>SEO</th>
-                <th>FCP</th><th>LCP</th><th>TBT</th><th>CLS</th><th>TTI</th><th>Transfer</th>
-              </tr>
-            </thead>
-            <tbody id="history-tbody"></tbody>
-          </table>
-        </div>
-        <div class="pagination" id="history-pagination"></div>
-      </div>
-    </div>
-
-  </div><!-- /content -->
-</div><!-- /main -->
-</div><!-- /app -->
+<div class="footer">
+  <span>mewatch Performance Dashboard · Powered by Lighthouse CI · Runs nightly at 9:30 PM IST</span>
+  <span id="footer-date"></span>
+</div>
 
 <script>
-(function () {
-  'use strict';
+// ─── DATA ──────────────────────────────────────────────────────────────────
+// MeWatch flat schema: each row = one device run
+// { timestamp, url, device, scores:{performance,accessibility,bestPractices,seo},
+//   vitals:{fcp,lcp,tbt,cls,tti,si}, resources:{totalTransferKb,unusedJsKb,unusedCssKb,
+//   unoptimizedImagesKb,renderBlockingKb,thirdPartyKb} }
 
-  // ── State ────────────────────────────────────────────────────────────────
-  let allData = [];
-  let filteredData = [];
-  let activeDevice = 'desktop';
-  let charts = {};
+let ALL_DATA = [];
+let filteredData = [];  // filtered by date range, all devices
+let device = 'desktop';
+let charts = {};
 
-  // ── Helpers ───────────────────────────────────────────────────────────────
-  const $ = (sel) => document.querySelector(sel);
-  const fmtDate = (iso) => {
-    const d = new Date(iso);
-    return d.toLocaleDateString('en-SG', { day: '2-digit', month: 'short', year: 'numeric' });
+// ─── CHART HELPERS ──────────────────────────────────────────────────────────
+function destroyChart(id) {
+  if (charts[id]) { charts[id].destroy(); delete charts[id]; }
+}
+
+// ─── COLORS ──────────────────────────────────────────────────────────────────
+const C = {
+  perf:  '#4f8cff',
+  a11y:  '#34d399',
+  bp:    '#a78bfa',
+  seo:   '#fbbf24',
+  lcp:   '#f87171',
+  fcp:   '#60a5fa',
+  tbt:   '#fb923c',
+  cls:   '#c084fc',
+  grid:  'rgba(255,255,255,0.06)',
+  tick:  '#8890a4',
+};
+
+const chartDefaults = {
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: { legend: { display: false } },
+  scales: {
+    x: { grid: { color: C.grid }, ticks: { color: C.tick, font: { size: 11 } } },
+    y: { grid: { color: C.grid }, ticks: { color: C.tick, font: { size: 11 } } },
+  },
+};
+
+// ─── SCORE COLOUR ────────────────────────────────────────────────────────────
+function scoreColor(s) {
+  if (s >= 90) return '#34d399';
+  if (s >= 50) return '#fbbf24';
+  return '#f87171';
+}
+function scorePillClass(s) {
+  if (s >= 90) return 'pill-good';
+  if (s >= 50) return 'pill-needs';
+  return 'pill-poor';
+}
+function cwvBadge(metric, val) {
+  // val in raw units: fcp/lcp/tti/si in ms, tbt in ms, cls unitless
+  const thresholds = {
+    fcp:  [1800, 3000],
+    lcp:  [2500, 4000],
+    tbt:  [200,  600],
+    cls:  [0.1,  0.25],
+    si:   [3400, 5800],
+    tti:  [3800, 7300],
   };
-  const fmtMs = (v) => v == null ? '—' : v >= 1000 ? (v / 1000).toFixed(2) + 's' : Math.round(v) + 'ms';
-  const fmtKb = (v) => v == null ? '—' : v + ' KB';
-  const scoreCls = (s) => s >= 90 ? 'high' : s >= 50 ? 'mid' : 'low';
-  const pillCls = (s) => s >= 90 ? 'good' : s >= 50 ? 'needs-improvement' : 'poor';
-  const pillLbl = (s) => s >= 90 ? 'Good' : s >= 50 ? 'Average' : 'Poor';
+  const t = thresholds[metric];
+  if (!t) return ['—', 'badge-good'];
+  if (val <= t[0]) return ['Good', 'badge-good'];
+  if (val <= t[1]) return ['Needs work', 'badge-needs'];
+  return ['Poor', 'badge-poor'];
+}
 
-  function vitalStatus(metric, value) {
-    if (value == null) return { cls: '', label: '—' };
-    const thresholds = {
-      lcp: [2500, 4000], fcp: [1800, 3000], tbt: [200, 600],
-      cls: [0.1, 0.25], tti: [3800, 7300], si: [3400, 5800],
-    };
-    const t = thresholds[metric];
-    if (!t) return { cls: '', label: '' };
-    if (value <= t[0]) return { cls: 'good', label: 'Good' };
-    if (value <= t[1]) return { cls: 'needs-improvement', label: 'Needs Improvement' };
-    return { cls: 'poor', label: 'Poor' };
+// ─── FORMAT HELPERS ──────────────────────────────────────────────────────────
+function fmtMs(v) {
+  if (v == null) return '—';
+  return v >= 1000 ? (v / 1000).toFixed(2) + 's' : Math.round(v) + 'ms';
+}
+function fmtSec(v) {
+  // for CWV cards: returns e.g. "3.20s" or "180ms"
+  if (v == null) return '—';
+  return v >= 1000 ? (v / 1000).toFixed(2) + 's' : Math.round(v) + 'ms';
+}
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+async function init() {
+  try {
+    const res = await fetch('results/perf-results.json');
+    ALL_DATA = await res.json();
+  } catch(_) {
+    ALL_DATA = [];
   }
 
-  // ── Data loading ──────────────────────────────────────────────────────────
-  async function loadData() {
-    try {
-      const res = await fetch('results/perf-results.json?t=' + Date.now());
-      allData = await res.json();
-    } catch (_) {
-      allData = [];
-    }
-    initDatePickers();
-    applyFilters();
+  if (!ALL_DATA.length) {
+    document.querySelector('.main').innerHTML =
+      '<div class="empty-state">No performance data found.<br>Run the nightly GitHub Actions workflow to generate results.</div>';
+    return;
   }
 
-  function initDatePickers() {
-    if (!allData.length) return;
-    const dates = allData.map((r) => r.timestamp.slice(0, 10)).sort();
-    $('#date-from').value = dates[0];
-    $('#date-to').value = dates[dates.length - 1];
-  }
+  const dates = ALL_DATA.map(r => r.timestamp.slice(0,10)).sort();
+  document.getElementById('date-from').value = dates[0];
+  document.getElementById('date-to').value   = dates[dates.length - 1];
 
-  function applyFilters() {
-    const from = $('#date-from').value;
-    const to = $('#date-to').value;
-    filteredData = allData.filter((r) => {
-      const d = r.timestamp.slice(0, 10);
-      const deviceMatch = r.device === activeDevice;
-      const dateMatch = (!from || d >= from) && (!to || d <= to);
-      return deviceMatch && dateMatch;
-    });
-    historyPage = 1;
-    render();
-  }
+  const last = ALL_DATA[ALL_DATA.length - 1];
+  document.getElementById('last-updated').textContent =
+    'Last run: ' + new Date(last.timestamp).toLocaleDateString('en-GB', {day:'numeric',month:'short',year:'numeric'});
 
-  // ── Rendering ─────────────────────────────────────────────────────────────
-  function render() {
-    renderScoreCards();
-    renderVitalsCards('#vitals-cards');
-    renderVitalsCards('#vitals-cards-2');
-    renderScoreTrends();
-    renderVitalsTrends();
-    renderResources();
-    renderHistory();
-  }
+  document.getElementById('footer-date').textContent =
+    'Generated ' + new Date().toLocaleString();
 
-  function renderScoreCards() {
-    const el = $('#score-cards');
-    if (!filteredData.length) {
-      el.innerHTML = '<div class="empty" style="grid-column:1/-1"><h3>No data yet</h3><p>Run your first Lighthouse test via GitHub Actions or locally.</p></div>';
-      return;
-    }
-    const latest = filteredData[filteredData.length - 1];
-    const s = latest.scores;
-    const metrics = [
-      { key: 'performance', label: 'Performance' },
-      { key: 'accessibility', label: 'Accessibility' },
-      { key: 'bestPractices', label: 'Best Practices' },
-      { key: 'seo', label: 'SEO' },
-    ];
-    el.innerHTML = metrics.map(({ key, label }) => {
-      const val = s[key] ?? 0;
-      const cls = scoreCls(val);
-      const pcls = pillCls(val);
-      const plbl = pillLbl(val);
-      const color = cls === 'high' ? '#16a34a' : cls === 'mid' ? '#d97706' : '#dc2626';
-      return `<div class="score-card">
-        <div class="score-label">${label}</div>
-        <div class="score-value-row">
-          <div class="score-num ${cls}">${val}</div>
-          <div class="score-badge ${pcls}">${plbl}</div>
-        </div>
-        <div class="score-gauge"><div class="score-gauge-fill" style="width:${val}%;background:${color}"></div></div>
+  applyFilters();
+}
+
+// ─── FILTERS ──────────────────────────────────────────────────────────────────
+function setDevice(d) {
+  device = d;
+  document.getElementById('btn-desktop').classList.toggle('active', d === 'desktop');
+  document.getElementById('btn-mobile').classList.toggle('active',  d === 'mobile');
+  renderAll();
+}
+
+function resetFilters() {
+  const dates = ALL_DATA.map(r => r.timestamp.slice(0,10)).sort();
+  document.getElementById('date-from').value = dates[0];
+  document.getElementById('date-to').value   = dates[dates.length - 1];
+  applyFilters();
+}
+
+function applyFilters() {
+  const from = document.getElementById('date-from').value;
+  const to   = document.getElementById('date-to').value;
+  filteredData = ALL_DATA.filter(r => {
+    const d = r.timestamp.slice(0,10);
+    return d >= from && d <= to;
+  });
+  const devCount = filteredData.filter(r => r.device === device).length;
+  document.getElementById('run-count').textContent =
+    devCount + ' run' + (devCount !== 1 ? 's' : '');
+  renderAll();
+}
+
+// ─── GET DEVICE RUNS ──────────────────────────────────────────────────────────
+// Returns only rows matching current device, sorted by date asc
+function devRuns() {
+  return filteredData.filter(r => r.device === device)
+    .sort((a, b) => a.timestamp.localeCompare(b.timestamp));
+}
+
+// ─── RENDER ALL ───────────────────────────────────────────────────────────────
+function renderAll() {
+  const runs = devRuns();
+  if (!runs.length) return;
+  renderScoreCards(runs);
+  renderCWVCards(runs);
+  renderScoresTrend(runs);
+  renderVitalsTrends(runs);
+  renderResourceCharts(runs);
+  renderDiagTable(runs);
+  renderHistoryTable();
+}
+
+// ─── SCORE CARDS ──────────────────────────────────────────────────────────────
+function renderScoreCards(runs) {
+  const latest = runs[runs.length - 1];
+  const prev   = runs.length > 1 ? runs[runs.length - 2] : null;
+
+  const from = runs[0].timestamp.slice(0,10);
+  const to   = latest.timestamp.slice(0,10);
+  document.getElementById('score-date-range').textContent =
+    from === to ? from : from + ' → ' + to;
+
+  const metrics = [
+    { key: 'performance',   label: 'Performance'   },
+    { key: 'accessibility', label: 'Accessibility' },
+    { key: 'bestPractices', label: 'Best Practices'},
+    { key: 'seo',           label: 'SEO'           },
+  ];
+
+  document.getElementById('score-cards').innerHTML = metrics.map(m => {
+    const val     = latest.scores[m.key] ?? 0;
+    const prevVal = prev ? (prev.scores[m.key] ?? val) : val;
+    const delta   = val - prevVal;
+    const color   = scoreColor(val);
+    const deltaHtml = delta === 0
+      ? `<span class="delta-flat">— no change</span>`
+      : delta > 0
+        ? `<span class="delta-up">▲ ${delta} vs prev</span>`
+        : `<span class="delta-down">▼ ${Math.abs(delta)} vs prev</span>`;
+    return `
+      <div class="score-card">
+        <div class="score-card-label">${m.label}</div>
+        <div class="score-card-value" style="color:${color}">${val}</div>
+        <div class="score-card-delta">${deltaHtml}</div>
+        <div class="score-bar"><div class="score-bar-fill" style="width:${val}%;background:${color}"></div></div>
       </div>`;
-    }).join('');
-  }
+  }).join('');
+}
 
-  function renderVitalsCards(sel) {
-    const el = $(sel);
-    if (!el) return;
-    if (!filteredData.length) { el.innerHTML = '<p style="color:var(--c-muted);padding:12px;">No data</p>'; return; }
-    const latest = filteredData[filteredData.length - 1];
-    const v = latest.vitals;
-    const vitals = [
-      { key: 'fcp', label: 'FCP', unit: '', fmt: fmtMs },
-      { key: 'lcp', label: 'LCP', unit: '', fmt: fmtMs },
-      { key: 'tbt', label: 'TBT', unit: '', fmt: fmtMs },
-      { key: 'cls', label: 'CLS', unit: '', fmt: (x) => x == null ? '—' : x.toFixed(3) },
-      { key: 'tti', label: 'TTI', unit: '', fmt: fmtMs },
-      { key: 'si', label: 'SI', unit: '', fmt: fmtMs },
-    ];
-    el.innerHTML = vitals.map(({ key, label, fmt }) => {
-      const val = v[key];
-      const st = vitalStatus(key, val);
-      return `<div class="vital-card">
-        <div class="vital-name">${label}</div>
-        <div class="vital-value">${fmt(val)}</div>
-        <span class="vital-badge ${st.cls}" style="background:${st.cls==='good'?'var(--c-good-bg)':st.cls==='needs-improvement'?'var(--c-warn-bg)':'var(--c-bad-bg)'};color:${st.cls==='good'?'var(--c-good)':st.cls==='needs-improvement'?'var(--c-warn)':'var(--c-bad)'}">${st.label}</span>
-      </div>`;
-    }).join('');
-  }
+// ─── CWV CARDS ────────────────────────────────────────────────────────────────
+function renderCWVCards(runs) {
+  const latest = runs[runs.length - 1];
+  const v = latest.vitals;
 
-  function destroyChart(id) {
-    if (charts[id]) { charts[id].destroy(); delete charts[id]; }
-  }
+  const vitals = [
+    { key: 'fcp', label: 'FCP', full: 'First Contentful Paint',   threshold: 'Good ≤ 1.8s'  },
+    { key: 'lcp', label: 'LCP', full: 'Largest Contentful Paint', threshold: 'Good ≤ 2.5s'  },
+    { key: 'tbt', label: 'TBT', full: 'Total Blocking Time',      threshold: 'Good ≤ 200ms' },
+    { key: 'cls', label: 'CLS', full: 'Cumulative Layout Shift',  threshold: 'Good ≤ 0.1'   },
+    { key: 'si',  label: 'SI',  full: 'Speed Index',              threshold: 'Good ≤ 3.4s'  },
+    { key: 'tti', label: 'TTI', full: 'Time to Interactive',      threshold: 'Good ≤ 3.8s'  },
+  ];
 
-  function renderScoreTrends() {
-    destroyChart('scores');
-    const canvas = $('#chart-scores');
-    if (!canvas) return;
-    if (!filteredData.length) return;
-    const labels = filteredData.map((r) => fmtDate(r.timestamp));
-    const ds = (key, color, label) => ({
-      label, data: filteredData.map((r) => r.scores[key] ?? null),
-      borderColor: color, backgroundColor: color + '20',
-      tension: 0.3, fill: false, pointRadius: 4,
-    });
-    charts['scores'] = new Chart(canvas, {
-      type: 'line',
-      data: {
-        labels,
-        datasets: [
-          ds('performance', '#6366f1', 'Performance'),
-          ds('accessibility', '#16a34a', 'Accessibility'),
-          ds('bestPractices', '#d97706', 'Best Practices'),
-          ds('seo', '#0ea5e9', 'SEO'),
-        ],
-      },
-      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { font: { size: 11 }, boxWidth: 12 } } }, scales: { y: { min: 0, max: 100, ticks: { font: { size: 11 } } }, x: { ticks: { font: { size: 10 }, maxRotation: 30 } } } },
-    });
-  }
-
-  function renderVitalsTrends() {
-    const charts_def = [
-      { id: 'lcp', key: 'lcp', color: '#6366f1', divisor: 1000, unit: 's' },
-      { id: 'fcp', key: 'fcp', color: '#16a34a', divisor: 1000, unit: 's' },
-      { id: 'tbt', key: 'tbt', color: '#d97706', divisor: 1, unit: 'ms' },
-      { id: 'cls', key: 'cls', color: '#ef4444', divisor: 1, unit: '' },
-    ];
-    charts_def.forEach(({ id, key, color, divisor, unit }) => {
-      destroyChart(id);
-      const canvas = $(`#chart-${id}`);
-      if (!canvas || !filteredData.length) return;
-      const vitalsData = filteredData.slice(-15);
-      const labels = vitalsData.map((r) => fmtDate(r.timestamp));
-      const data = vitalsData.map((r) => {
-        const v = r.vitals[key];
-        return v == null ? null : +(v / divisor).toFixed(3);
-      });
-      charts[id] = new Chart(canvas, {
-        type: 'line',
-        data: {
-          labels,
-          datasets: [{ label: key.toUpperCase(), data, borderColor: color, backgroundColor: color + '15', tension: 0.3, fill: true, pointRadius: 4 }],
-        },
-        options: {
-          responsive: true, maintainAspectRatio: false,
-          plugins: { legend: { display: false } },
-          scales: {
-            y: { ticks: { font: { size: 11 }, callback: (v) => v + unit } },
-            x: { ticks: { font: { size: 10 }, maxRotation: 30 } },
-          },
-        },
-      });
-    });
-  }
-
-  function renderResources() {
-    destroyChart('weight');
-    destroyChart('opportunities');
-
-    if (!filteredData.length) return;
-    const latest = filteredData[filteredData.length - 1];
-    const r = latest.resources;
-
-    // Page weight doughnut
-    const wCanvas = $('#chart-weight');
-    if (wCanvas) {
-      const thirdParty = r.thirdPartyKb ?? 0;
-      const firstParty = Math.max(0, (r.totalTransferKb ?? 0) - thirdParty);
-      charts['weight'] = new Chart(wCanvas, {
-        type: 'doughnut',
-        data: {
-          labels: ['First Party', 'Third Party'],
-          datasets: [{ data: [firstParty, thirdParty], backgroundColor: ['#6366f1', '#f59e0b'], borderWidth: 2, borderColor: '#fff' }],
-        },
-        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { font: { size: 11 }, boxWidth: 12 } } } },
-      });
+  document.getElementById('cwv-cards').innerHTML = vitals.map(vt => {
+    const raw = v[vt.key];
+    const [badgeLabel, badgeClass] = cwvBadge(vt.key, raw);
+    let display;
+    if (vt.key === 'cls') {
+      display = raw == null ? '—' : raw.toFixed(3);
+    } else {
+      display = fmtSec(raw);
     }
-
-    // Opportunities bar
-    const oCanvas = $('#chart-opportunities');
-    if (oCanvas) {
-      charts['opportunities'] = new Chart(oCanvas, {
-        type: 'bar',
-        data: {
-          labels: ['Unused JS', 'Unused CSS', 'Unoptimized Images', 'Render Blocking'],
-          datasets: [{
-            label: 'KB savings',
-            data: [r.unusedJsKb ?? 0, r.unusedCssKb ?? 0, r.unoptimizedImagesKb ?? 0, r.renderBlockingKb ?? 0],
-            backgroundColor: ['#6366f1', '#16a34a', '#f59e0b', '#ef4444'],
-            borderRadius: 4, borderSkipped: false,
-          }],
-        },
-        options: {
-          responsive: true, maintainAspectRatio: false,
-          plugins: { legend: { display: false } },
-          scales: {
-            y: { ticks: { font: { size: 11 }, callback: (v) => v + ' KB' } },
-            x: { ticks: { font: { size: 10 } } },
-          },
-        },
-      });
-    }
-
-    // Diagnostics
-    const diagEl = $('#diag-table');
-    if (diagEl) {
-      const rows = [
-        { name: 'Total Page Weight', val: fmtKb(r.totalTransferKb), bench: '< 500 KB recommended', status: r.totalTransferKb == null ? '' : r.totalTransferKb < 500 ? 'good' : r.totalTransferKb < 1500 ? 'needs-improvement' : 'poor' },
-        { name: 'Unused JavaScript', val: fmtKb(r.unusedJsKb), bench: '< 100 KB savings', status: r.unusedJsKb == null ? '' : r.unusedJsKb < 100 ? 'good' : r.unusedJsKb < 300 ? 'needs-improvement' : 'poor' },
-        { name: 'Unused CSS', val: fmtKb(r.unusedCssKb), bench: '< 20 KB savings', status: r.unusedCssKb == null ? '' : r.unusedCssKb < 20 ? 'good' : r.unusedCssKb < 50 ? 'needs-improvement' : 'poor' },
-        { name: 'Third-party Transfer', val: fmtKb(r.thirdPartyKb), bench: '< 100 KB', status: r.thirdPartyKb == null ? '' : r.thirdPartyKb < 100 ? 'good' : r.thirdPartyKb < 300 ? 'needs-improvement' : 'poor' },
-      ];
-      diagEl.innerHTML = rows.map(({ name, val, bench, status }) => `
-        <div class="diag-row">
-          <span class="diag-name">${name}</span>
-          <div class="diag-right">
-            <span class="diag-bench">${bench}</span>
-            <span class="diag-val">${val}</span>
-            ${status ? `<span class="pill ${status}">${status === 'good' ? '✓' : status === 'needs-improvement' ? '!' : '✕'}</span>` : ''}
+    return `
+      <div class="cwv-card">
+        <div class="cwv-top">
+          <div>
+            <div class="cwv-name">${vt.label} — ${vt.full}</div>
+            <div class="cwv-val">${display}</div>
           </div>
-        </div>`).join('');
-    }
-  }
+          <span class="cwv-badge ${badgeClass}">${badgeLabel}</span>
+        </div>
+        <div class="cwv-threshold">${vt.threshold}</div>
+      </div>`;
+  }).join('');
+}
 
-  // ── History pagination state ───────────────────────────────────────────────
-  let historyPage = 1;
-  const HISTORY_PAGE_SIZE = 10;
+// ─── SCORES TREND ─────────────────────────────────────────────────────────────
+function renderScoresTrend(runs) {
+  destroyChart('scores');
+  const labels = runs.map(r => r.timestamp.slice(0,10));
+  const ds = (key, color, dash) => ({
+    label: key,
+    data: runs.map(r => r.scores[key] ?? null),
+    borderColor: color,
+    backgroundColor: color + '22',
+    borderWidth: 2,
+    borderDash: dash || [],
+    pointRadius: 4,
+    pointHoverRadius: 6,
+    fill: false,
+    tension: 0.35,
+  });
+  charts['scores'] = new Chart(document.getElementById('scoresTrendChart'), {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        ds('performance',   C.perf),
+        ds('accessibility', C.a11y, [5,3]),
+        ds('bestPractices', C.bp,   [3,3]),
+        ds('seo',           C.seo,  [8,3]),
+      ],
+    },
+    options: {
+      ...chartDefaults,
+      scales: {
+        ...chartDefaults.scales,
+        y: { ...chartDefaults.scales.y, min: 0, max: 100,
+          ticks: { color: C.tick, font: { size: 11 } } },
+      },
+      plugins: {
+        legend: {
+          display: true, position: 'top',
+          labels: { color: C.tick, font: { size: 11 }, boxWidth: 14, padding: 16 },
+        },
+        tooltip: { mode: 'index', intersect: false },
+      },
+    },
+  });
+}
 
-  function renderHistory() {
-    const tbody = $('#history-tbody');
-    const paginationEl = $('#history-pagination');
-    if (!tbody) return;
+// ─── VITALS TRENDS ────────────────────────────────────────────────────────────
+function makeLineChart(canvasId, key, color, labelFn, runs) {
+  destroyChart(canvasId);
+  const labels = runs.map(r => r.timestamp.slice(0,10));
+  const data   = runs.map(r => {
+    const v = r.vitals[key];
+    return v == null ? null : (key === 'cls' ? +v.toFixed(4) : +(v / 1000).toFixed(3));
+  });
+  charts[canvasId] = new Chart(document.getElementById(canvasId), {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        label: key.toUpperCase(),
+        data,
+        borderColor: color,
+        backgroundColor: color + '22',
+        borderWidth: 2,
+        pointRadius: 4,
+        fill: true,
+        tension: 0.35,
+      }],
+    },
+    options: {
+      ...chartDefaults,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: ctx => labelFn(ctx.raw) } },
+      },
+    },
+  });
+}
 
-    if (!filteredData.length) {
-      tbody.innerHTML = `<tr><td colspan="12" style="text-align:center;padding:32px;color:var(--c-muted);">No runs yet. Trigger a workflow run from the Actions tab.</td></tr>`;
-      if (paginationEl) paginationEl.innerHTML = '';
-      return;
-    }
+function renderVitalsTrends(runs) {
+  makeLineChart('lcpChart', 'lcp', C.lcp, v => v + 's', runs);
+  makeLineChart('fcpChart', 'fcp', C.fcp, v => v + 's', runs);
+  // TBT — keep in ms (don't divide by 1000)
+  destroyChart('tbtChart');
+  const labels = runs.map(r => r.timestamp.slice(0,10));
+  charts['tbtChart'] = new Chart(document.getElementById('tbtChart'), {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        label: 'TBT',
+        data: runs.map(r => r.vitals.tbt ?? null),
+        borderColor: C.tbt, backgroundColor: C.tbt + '22',
+        borderWidth: 2, pointRadius: 4, fill: true, tension: 0.35,
+      }],
+    },
+    options: {
+      ...chartDefaults,
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ctx.raw + 'ms' } } },
+    },
+  });
+  makeLineChart('clsChart', 'cls', C.cls, v => v, runs);
+}
 
-    const sorted = [...filteredData].reverse();
-    const totalPages = Math.ceil(sorted.length / HISTORY_PAGE_SIZE);
-    // Clamp page in case filteredData shrank
-    historyPage = Math.max(1, Math.min(historyPage, totalPages));
+// ─── RESOURCE CHARTS ──────────────────────────────────────────────────────────
+function renderResourceCharts(runs) {
+  const latest = runs[runs.length - 1];
+  const r = latest.resources;
 
-    const start = (historyPage - 1) * HISTORY_PAGE_SIZE;
-    const pageRows = sorted.slice(start, start + HISTORY_PAGE_SIZE);
+  // Doughnut: page weight
+  destroyChart('weight');
+  const thirdKb = r.thirdPartyKb ?? 0;
+  const firstKb = Math.max(0, (r.totalTransferKb ?? 0) - thirdKb);
+  charts['weight'] = new Chart(document.getElementById('weightChart'), {
+    type: 'doughnut',
+    data: {
+      labels: ['First-party', 'Third-party'],
+      datasets: [{
+        data: [firstKb, thirdKb],
+        backgroundColor: [C.perf, C.tbt],
+        borderColor: '#141720',
+        borderWidth: 2,
+      }],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: true, position: 'bottom',
+          labels: { color: C.tick, font: { size: 11 }, boxWidth: 12, padding: 12 } },
+        tooltip: { callbacks: { label: ctx => ctx.label + ': ' + ctx.raw.toLocaleString() + ' KB' } },
+      },
+      cutout: '62%',
+    },
+  });
 
-    tbody.innerHTML = pageRows.map((r) => {
-      const s = r.scores;
-      const v = r.vitals;
-      const res = r.resources;
-      return `<tr>
-        <td>${fmtDate(r.timestamp)}</td>
-        <td><span class="pill ${r.device}">${r.device}</span></td>
-        <td><span class="pill ${pillCls(s.performance)}">${s.performance ?? '—'}</span></td>
-        <td>${s.accessibility ?? '—'}</td>
-        <td>${s.bestPractices ?? '—'}</td>
-        <td>${s.seo ?? '—'}</td>
-        <td>${fmtMs(v.fcp)}</td>
-        <td>${fmtMs(v.lcp)}</td>
-        <td>${fmtMs(v.tbt)}</td>
-        <td>${v.cls == null ? '—' : v.cls.toFixed(3)}</td>
-        <td>${fmtMs(v.tti)}</td>
-        <td>${fmtKb(res.totalTransferKb)}</td>
+  // Bar: opportunities
+  destroyChart('opp');
+  charts['opp'] = new Chart(document.getElementById('oppChart'), {
+    type: 'bar',
+    data: {
+      labels: ['Unused JS', 'Unused CSS', 'Image optim.'],
+      datasets: [{
+        label: 'KB savings',
+        data: [r.unusedJsKb ?? 0, r.unusedCssKb ?? 0, r.unoptimizedImagesKb ?? 0],
+        backgroundColor: [C.lcp, C.cls, C.a11y],
+        borderRadius: 4,
+      }],
+    },
+    options: {
+      ...chartDefaults,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: ctx => ctx.raw + ' KB' } },
+      },
+      scales: {
+        ...chartDefaults.scales,
+        x: { ...chartDefaults.scales.x, ticks: { color: C.tick, font: { size: 11 }, autoSkip: false } },
+      },
+    },
+  });
+}
+
+// ─── DIAG TABLE ───────────────────────────────────────────────────────────────
+function renderDiagTable(runs) {
+  const latest = runs[runs.length - 1];
+  const r = latest.resources;
+
+  const rows = [
+    {
+      name: 'Total Transfer Size',
+      val: (r.totalTransferKb ?? '—') + (r.totalTransferKb != null ? ' KB' : ''),
+      bench: '< 2000 KB',
+      status: r.totalTransferKb == null ? 'needs'
+        : r.totalTransferKb < 2000 ? 'good'
+        : r.totalTransferKb < 4000 ? 'needs' : 'poor',
+    },
+    {
+      name: 'Unused JavaScript',
+      val: (r.unusedJsKb ?? '—') + (r.unusedJsKb != null ? ' KB' : ''),
+      bench: '< 100 KB savings',
+      status: r.unusedJsKb == null ? 'needs'
+        : r.unusedJsKb < 100 ? 'good'
+        : r.unusedJsKb < 300 ? 'needs' : 'poor',
+    },
+    {
+      name: 'Unused CSS',
+      val: (r.unusedCssKb ?? '—') + (r.unusedCssKb != null ? ' KB' : ''),
+      bench: '< 20 KB savings',
+      status: r.unusedCssKb == null ? 'needs'
+        : r.unusedCssKb < 20 ? 'good'
+        : r.unusedCssKb < 50 ? 'needs' : 'poor',
+    },
+    {
+      name: 'Unoptimized Images',
+      val: (r.unoptimizedImagesKb ?? '—') + (r.unoptimizedImagesKb != null ? ' KB' : ''),
+      bench: '< 50 KB savings',
+      status: r.unoptimizedImagesKb == null ? 'needs'
+        : r.unoptimizedImagesKb < 50 ? 'good'
+        : r.unoptimizedImagesKb < 200 ? 'needs' : 'poor',
+    },
+    {
+      name: 'Render-blocking Resources',
+      val: (r.renderBlockingKb ?? '—') + (r.renderBlockingKb != null ? ' KB' : ''),
+      bench: '0 KB',
+      status: r.renderBlockingKb == null ? 'needs'
+        : r.renderBlockingKb === 0 ? 'good'
+        : r.renderBlockingKb < 100 ? 'needs' : 'poor',
+    },
+    {
+      name: 'Third-party KB',
+      val: (r.thirdPartyKb ?? '—') + (r.thirdPartyKb != null ? ' KB' : ''),
+      bench: '< 200 KB',
+      status: r.thirdPartyKb == null ? 'needs'
+        : r.thirdPartyKb < 200 ? 'good'
+        : r.thirdPartyKb < 500 ? 'needs' : 'poor',
+    },
+  ];
+
+  const statusLabel = { good: 'Good', needs: 'Needs work', poor: 'Poor' };
+  const statusClass = { good: 'badge-good', needs: 'badge-needs', poor: 'badge-poor' };
+
+  document.getElementById('diag-table').innerHTML = rows.map(row => `
+    <tr>
+      <td>${row.name}</td>
+      <td style="font-weight:600">${row.val}</td>
+      <td style="color:var(--muted)">${row.bench}</td>
+      <td><span class="cwv-badge ${statusClass[row.status]}">${statusLabel[row.status]}</span></td>
+    </tr>`).join('');
+}
+
+// ─── HISTORY TABLE ────────────────────────────────────────────────────────────
+function renderHistoryTable() {
+  // Show ALL devices in date range, most recent first
+  const sorted = [...filteredData]
+    .sort((a, b) => b.timestamp.localeCompare(a.timestamp));
+
+  document.getElementById('table-count').textContent =
+    sorted.length + ' row' + (sorted.length !== 1 ? 's' : '');
+
+  document.getElementById('history-table').innerHTML = sorted.map(r => {
+    const s = r.scores;
+    const v = r.vitals;
+    const res = r.resources;
+    const date = new Date(r.timestamp).toLocaleDateString('en-GB',
+      {day:'numeric', month:'short', year:'numeric'});
+    return `
+      <tr>
+        <td style="white-space:nowrap;font-weight:500">${date}</td>
+        <td><span class="tag-device">${r.device}</span></td>
+        <td><span class="score-pill ${scorePillClass(s.performance ?? 0)}">${s.performance ?? '—'}</span></td>
+        <td><span class="score-pill ${scorePillClass(s.accessibility ?? 0)}">${s.accessibility ?? '—'}</span></td>
+        <td><span class="score-pill ${scorePillClass(s.bestPractices ?? 0)}">${s.bestPractices ?? '—'}</span></td>
+        <td><span class="score-pill ${scorePillClass(s.seo ?? 0)}">${s.seo ?? '—'}</span></td>
+        <td style="color:var(--muted)">${fmtMs(v.fcp)}</td>
+        <td style="color:var(--muted)">${fmtMs(v.lcp)}</td>
+        <td style="color:var(--muted)">${fmtMs(v.tbt)}</td>
+        <td style="color:var(--muted)">${v.cls == null ? '—' : v.cls.toFixed(3)}</td>
+        <td style="color:var(--muted)">${fmtMs(v.tti)}</td>
+        <td style="color:var(--muted)">${res.totalTransferKb != null ? res.totalTransferKb + ' KB' : '—'}</td>
       </tr>`;
-    }).join('');
+  }).join('');
+}
 
-    // Render pagination controls
-    if (paginationEl) {
-      if (totalPages <= 1) { paginationEl.innerHTML = ''; return; }
+// ─── SCROLL / NAV ─────────────────────────────────────────────────────────────
+function scrollToSection(id, el) {
+  document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  document.querySelectorAll('.sidebar-link').forEach(l => l.classList.remove('active'));
+  if (el) el.classList.add('active');
+}
 
-      const rangeEnd = Math.min(start + HISTORY_PAGE_SIZE, sorted.length);
-      let html = `<span class="page-info">Showing ${start + 1}–${rangeEnd} of ${sorted.length}</span>`;
-
-      // Prev button
-      html += `<button class="page-btn" ${historyPage === 1 ? 'disabled' : ''} onclick="goHistoryPage(${historyPage - 1})">‹</button>`;
-
-      // Page number buttons (show up to 7 pages around current)
-      const delta = 2;
-      const pages = new Set([1, totalPages]);
-      for (let i = Math.max(2, historyPage - delta); i <= Math.min(totalPages - 1, historyPage + delta); i++) pages.add(i);
-      let prev = 0;
-      [...pages].sort((a, b) => a - b).forEach(p => {
-        if (prev && p - prev > 1) html += `<span class="page-btn" style="pointer-events:none;border:none;">…</span>`;
-        html += `<button class="page-btn ${p === historyPage ? 'active' : ''}" onclick="goHistoryPage(${p})">${p}</button>`;
-        prev = p;
-      });
-
-      // Next button
-      html += `<button class="page-btn" ${historyPage === totalPages ? 'disabled' : ''} onclick="goHistoryPage(${historyPage + 1})">›</button>`;
-
-      paginationEl.innerHTML = html;
-    }
-  }
-
-  // Exposed globally for onclick handlers
-  window.goHistoryPage = function(page) {
-    historyPage = page;
-    renderHistory();
-  };
-
-  // ── Nav ───────────────────────────────────────────────────────────────────
-  const pageTitles = {
-    summary: 'Summary',
-    vitals: 'Core Web Vitals',
-    'score-trends': 'Score Trends',
-    'vitals-trends': 'Vitals Trends',
-    resources: 'Resources',
-    history: 'Run History',
-  };
-
-  document.querySelectorAll('.nav-item').forEach((item) => {
-    item.addEventListener('click', () => {
-      const page = item.dataset.page;
-      document.querySelectorAll('.nav-item').forEach((i) => i.classList.remove('active'));
-      item.classList.add('active');
-      document.querySelectorAll('.page').forEach((p) => p.classList.remove('active'));
-      $(`#page-${page}`).classList.add('active');
-      $('#page-title').textContent = pageTitles[page] || page;
-      // Re-render charts for newly visible pages
-      if (page === 'score-trends') renderScoreTrends();
-      if (page === 'vitals-trends') renderVitalsTrends();
-      if (page === 'resources') renderResources();
-    });
+// Highlight sidebar link on scroll
+const sections = ['summary','cwv','trends','cwv-trends','resources','history'];
+window.addEventListener('scroll', () => {
+  let current = sections[0];
+  sections.forEach(id => {
+    const el = document.getElementById(id);
+    if (el && el.getBoundingClientRect().top < 120) current = id;
   });
-
-  // ── Device toggle ─────────────────────────────────────────────────────────
-  document.querySelectorAll('.device-btn').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.device-btn').forEach((b) => b.classList.remove('active'));
-      btn.classList.add('active');
-      activeDevice = btn.dataset.device;
-      applyFilters();
-    });
+  document.querySelectorAll('.sidebar-link').forEach((link, i) => {
+    link.classList.toggle('active', sections[i] === current);
   });
+}, { passive: true });
 
-  // ── Filter buttons ────────────────────────────────────────────────────────
-  $('#apply-btn').addEventListener('click', applyFilters);
-  $('#reset-btn').addEventListener('click', () => {
-    initDatePickers();
-    applyFilters();
-  });
-
-  // ── Boot ──────────────────────────────────────────────────────────────────
-  loadData();
-})();
+// ─── BOOT ─────────────────────────────────────────────────────────────────────
+init();
 </script>
-
-<footer style="text-align:center;padding:20px 24px;font-size:11px;color:#9ca3af;border-top:1px solid var(--c-border);margin-top:8px;">
-  mewatch Performance Dashboard &middot; Powered by Lighthouse CI &middot; Runs nightly at 9:30&nbsp;PM&nbsp;IST
-</footer>
 
 </body>
 </html>
