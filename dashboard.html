@@ -756,6 +756,7 @@ function makeLineChart(canvasId, key, color, labelFn, runs) {
 }
 
 function renderVitalsTrends(runs) {
+  runs = runs.slice(-10);
   makeLineChart('lcpChart', 'lcp', C.lcp, v => v + 's', runs);
   makeLineChart('fcpChart', 'fcp', C.fcp, v => v + 's', runs);
   // TBT — keep in ms (don't divide by 1000)
