@@ -224,6 +224,26 @@ tbody td { padding: 10px 14px; vertical-align: middle; }
 .pill-poor { background: rgba(248,113,113,.15); color: var(--bad); }
 .tag-device { font-size: 10px; padding: 2px 7px; border-radius: 10px; border: 1px solid var(--border2); color: var(--muted); }
 
+/* PAGINATION */
+.pagination {
+  display: flex; align-items: center; justify-content: flex-end;
+  gap: 4px; padding: 12px 16px; border-top: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+.pg-info { font-size: 11px; color: var(--muted); margin-right: 6px; }
+.pg-btn {
+  min-width: 30px; height: 28px; padding: 0 7px;
+  border: 1px solid var(--border2); border-radius: 5px;
+  background: transparent; color: var(--muted);
+  font-size: 12px; font-family: var(--font); cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
+  transition: all .15s;
+}
+.pg-btn:hover:not([disabled]) { background: var(--bg3); color: var(--text); }
+.pg-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+.pg-btn[disabled] { opacity: .35; cursor: default; pointer-events: none; }
+.pg-ellipsis { font-size: 12px; color: var(--muted); padding: 0 2px; line-height: 28px; }
+
 /* RESOURCE GRID */
 .resource-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
 
@@ -295,6 +315,7 @@ tbody td { padding: 10px 14px; vertical-align: middle; }
       </div>
       <button class="btn btn-ghost" onclick="resetFilters()">Reset</button>
       <button class="btn btn-primary" onclick="applyFilters()">Apply</button>
+      <button class="btn btn-ghost" onclick="window.print()" title="Save current view as PDF" style="display:flex;align-items:center;gap:5px;">⬇ PDF</button>
       <span id="run-count" style="font-size:12px;color:var(--muted);margin-left:auto;"></span>
     </div>
 
@@ -408,6 +429,7 @@ tbody td { padding: 10px 14px; vertical-align: middle; }
           </tr></thead>
           <tbody id="history-table"></tbody>
         </table>
+        <div class="pagination" id="history-pagination"></div>
       </div>
     </div>
 
@@ -430,6 +452,8 @@ let ALL_DATA = [];
 let filteredData = [];  // filtered by date range, all devices
 let device = 'desktop';
 let charts = {};
+let historyPage = 1;
+const HISTORY_PER_PAGE = 10;
 
 // ─── CHART HELPERS ──────────────────────────────────────────────────────────
 function destroyChart(id) {
@@ -533,6 +557,7 @@ function setDevice(d) {
   device = d;
   document.getElementById('btn-desktop').classList.toggle('active', d === 'desktop');
   document.getElementById('btn-mobile').classList.toggle('active',  d === 'mobile');
+  historyPage = 1;
   renderAll();
 }
 
@@ -553,6 +578,7 @@ function applyFilters() {
   const devCount = filteredData.filter(r => r.device === device).length;
   document.getElementById('run-count').textContent =
     devCount + ' run' + (devCount !== 1 ? 's' : '');
+  historyPage = 1;
   renderAll();
 }
 
@@ -653,6 +679,7 @@ function renderCWVCards(runs) {
 // ─── SCORES TREND ─────────────────────────────────────────────────────────────
 function renderScoresTrend(runs) {
   destroyChart('scores');
+  runs = runs.slice(-10);
   const labels = runs.map(r => r.timestamp.slice(0,10));
   const ds = (key, color, dash) => ({
     label: key,
@@ -886,10 +913,19 @@ function renderHistoryTable() {
   const sorted = [...filteredData]
     .sort((a, b) => b.timestamp.localeCompare(a.timestamp));
 
-  document.getElementById('table-count').textContent =
-    sorted.length + ' row' + (sorted.length !== 1 ? 's' : '');
+  const total = sorted.length;
+  const totalPages = Math.max(1, Math.ceil(total / HISTORY_PER_PAGE));
+  historyPage = Math.max(1, Math.min(historyPage, totalPages));
 
-  document.getElementById('history-table').innerHTML = sorted.map(r => {
+  const start = (historyPage - 1) * HISTORY_PER_PAGE;
+  const pageRows = sorted.slice(start, start + HISTORY_PER_PAGE);
+
+  document.getElementById('table-count').textContent =
+    total > 0
+      ? `${start + 1}–${Math.min(start + HISTORY_PER_PAGE, total)} of ${total} row${total !== 1 ? 's' : ''}`
+      : '0 rows';
+
+  document.getElementById('history-table').innerHTML = pageRows.map(r => {
     const s = r.scores;
     const v = r.vitals;
     const res = r.resources;
@@ -911,6 +947,31 @@ function renderHistoryTable() {
         <td style="color:var(--muted)">${res.totalTransferKb != null ? res.totalTransferKb + ' KB' : '—'}</td>
       </tr>`;
   }).join('');
+
+  // ── Pagination controls ──────────────────────────────────────────────────
+  const pgEl = document.getElementById('history-pagination');
+  if (totalPages <= 1) { pgEl.innerHTML = ''; return; }
+
+  let html = `<span class="pg-info">${start + 1}–${Math.min(start + HISTORY_PER_PAGE, total)} of ${total}</span>`;
+  html += `<button class="pg-btn" onclick="goHistoryPage(${historyPage - 1})" ${historyPage === 1 ? 'disabled' : ''}>‹</button>`;
+
+  const delta = 2;
+  const pages = new Set([1, totalPages]);
+  for (let i = Math.max(2, historyPage - delta); i <= Math.min(totalPages - 1, historyPage + delta); i++) pages.add(i);
+  let prev = 0;
+  [...pages].sort((a, b) => a - b).forEach(p => {
+    if (prev && p - prev > 1) html += `<span class="pg-ellipsis">…</span>`;
+    html += `<button class="pg-btn${p === historyPage ? ' active' : ''}" onclick="goHistoryPage(${p})">${p}</button>`;
+    prev = p;
+  });
+
+  html += `<button class="pg-btn" onclick="goHistoryPage(${historyPage + 1})" ${historyPage === totalPages ? 'disabled' : ''}>›</button>`;
+  pgEl.innerHTML = html;
+}
+
+function goHistoryPage(p) {
+  historyPage = p;
+  renderHistoryTable();
 }
 
 // ─── SCROLL / NAV ─────────────────────────────────────────────────────────────
